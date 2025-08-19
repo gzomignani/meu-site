@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>gabriel zomignani</title>
+  <link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#111" />
+  <!-- Favicon / Pinned tab -->
+  <link rel="icon" href="/icone.svg" type="image/svg+xml">
+  <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#111">
+  <style>
+    :root{
+      --bg:#fff; --fg:#111;
+      --gap:clamp(16px, 2.8vw, 36px);
+      /* Dimensões base (desktop) */
+      --side-w:clamp(140px, 12vw, 220px);
+      --side-h:clamp(360px, 62vh, 720px);
+      --main-w:clamp(520px, calc(100vw - (2 * var(--side-w)) - (2 * var(--gap))), 1600px);
+      --main-h:clamp(420px, 70vh, 860px);
+      --text-gap:clamp(14px, 2.2vw, 28px);
+      --ease:cubic-bezier(.22,.61,.36,1);
+    }
+
+    *{ box-sizing:border-box }
+    html, body{ height:100% }
+    body{
+      margin:0; background:var(--bg); color:var(--fg);
+      font-family:"Host Grotesk", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      overflow-x:hidden;
+      cursor:none; /* cursor customizado (desktop) */
+    }
+
+    /* ===== HERO ===== */
+    .hero{ position:relative; height:100vh; height:100dvh; display:grid; place-items:center; }
+    .hero__sticky{ position:sticky; top:0; height:100vh; height:100dvh; display:grid; place-items:center; }
+    .logoWrap{ will-change:transform,opacity; transition:transform 777ms var(--ease), opacity 333ms var(--ease); }
+    .logo{ width:min(90vw, 1200px); height:auto; display:block; }
+
+    /* Ícone fixo que aparece após o scroll */
+    .brandIcon{
+      position:fixed; left:20px; top:20px; width:90px; height:90px;
+      opacity:0; pointer-events:none; transition:transform 999ms var(--ease), opacity 777ms var(--ease); z-index:10;
+    }
+    .brandIcon img{ width:100%; height:100%; display:block; }
+
+    /* ===== GALERIA (DESKTOP) ===== */
+    .galeria{ height:100vh; height:100dvh; width:100vw; position:relative; }
+    .stage{ position:relative; width:100%; height:100%; }
+
+    .titulo{
+      position:absolute; left:calc(50% - var(--main-w)/2); top:calc(50% - var(--main-h)/2);
+      transform:translateY(calc(-100% - var(--text-gap)));
+      margin:0; font-weight:600; font-size:clamp(20px, 2.4vw, 32px);
+    }
+    .descricao{
+      position:absolute; left:calc(50% - var(--main-w)/2); top:calc(50% + var(--main-h)/2);
+      transform:translateY(var(--text-gap)); width:var(--main-w);
+      margin:0; font-weight:500; font-size:clamp(14px, 2vw, 22px); line-height:1; text-align:left;
+    }
+
+    .carousel{ position:absolute; inset:0; }
+    .projeto{
+      position:absolute; cursor:pointer; user-select:none;
+      transition:transform 600ms var(--ease), opacity 600ms var(--ease), width 600ms var(--ease), height 600ms var(--ease);
+      margin:0;
+    }
+    .frame{ position: relative; width:100%; height:100%; overflow:hidden; }
+
+    /* Posições (3 blocos + fila) */
+    .pos-centro{ width:var(--main-w); height:var(--main-h); opacity:1; z-index:3; transform:translate3d(calc(50vw - 50%), calc(50vh - 50%), 0) scale(1); }
+    .pos-esq  { width:var(--side-w); height:var(--side-h); opacity:1; z-index:2; transform:translate3d(0, calc(50vh - 50%), 0) scale(.965); }
+    .pos-dir  { width:var(--side-w); height:var(--side-h); opacity:1; z-index:2; transform:translate3d(calc(100vw - var(--side-w)), calc(50vh - 50%), 0) scale(.965); }
+    .pos-fila { width:var(--side-w); height:var(--side-h); opacity:0; z-index:1; transform:translate3d(120vw, calc(50vh - 50%), 0) scale(.94); }
+
+    /* Camadas para crossfade (desktop) */
+    .frame > .layer{
+      position:absolute; inset:0;
+      background-position:center; background-repeat:no-repeat; background-size:cover;
+      opacity:1; transition:opacity 260ms var(--ease); will-change:opacity; pointer-events:none;
+    }
+    .carousel .pos-esq   .frame > .layer{ background-position:right center; }
+    .carousel .pos-dir   .frame > .layer{ background-position:left  center; }
+    .carousel .pos-centro .frame > .layer{ background-size:contain; background-position:center; background-color:var(--bg); }
+
+    /* Acessibilidade: reduz animações */
+    @media (prefers-reduced-motion: reduce){ .logoWrap, .projeto{ transition:none !important; } }
+
+    /* ===== LISTA (MOBILE) ===== */
+    .listaMobile{ display:none; }
+
+    @media (max-width: 768px){
+      .galeria{ height:auto; min-height:0; }
+      .stage{ position:static; }
+      /* Esconde layout do carrossel no mobile */
+      .titulo, .descricao, .carousel{ display:none !important; }
+      /* Mostra a lista empilhada (sem padding lateral) */
+      .listaMobile{ display:block; width:100vw; }
+
+      .projMobile{ width:100vw; margin: clamp(12px, 3.2vw, 22px) 0; touch-action: pan-y; }
+      .tituloMobile{ margin: 0 0 clamp(8px, 2.4vw, 12px) 0; font-weight:600; font-size: clamp(18px, 4vw, 24px); line-height:1.1; }
+
+      .frameMobile{ position:relative; }
+      .frameMobile .mediaWrap{ position:relative; width:100%; aspect-ratio:16 / 9; overflow:hidden; background:var(--bg); }
+      .frameMobile .mediaWrap > img.layer{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; display:block; opacity:0; transition:opacity 260ms var(--ease); }
+      .frameMobile .mediaWrap > img.layer.on{ opacity:1; }
+
+      .descricaoMobile{ margin: clamp(8px, 2.6vw, 14px) 0 0 0; font-weight:500; font-size: clamp(14px, 3.6vw, 18px); line-height:1.35; text-align:left; }
+    }
+  </style>
+</head>
+<body>
+  <div class="brandIcon" id="brandIcon" aria-hidden="true"><img src="icone.svg" alt=""></div>
+
+  <section class="hero" aria-label="Abertura">
+    <div class="hero__sticky">
+      <div class="logoWrap" id="logoWrap">
+        <img class="logo" src="landing page.svg" alt="Logo">
+      </div>
+    </div>
+  </section>
+
+  <section class="galeria" aria-label="Galeria">
+    <div class="stage">
+      <!-- DESKTOP -->
+      <h2 class="titulo" id="titulo">Título do projeto</h2>
+      <div class="carousel" id="carousel"></div>
+      <p class="descricao" id="descricao">Descrição longa de teste…</p>
+      <!-- MOBILE -->
+      <div class="listaMobile" id="listaMobile" aria-label="Projetos (mobile)"></div>
+    </div>
+  </section>
+
+<script>
+/* ===== Parallax + ícone de marca ===== */
+const logoWrap = document.getElementById('logoWrap');
+const brandIcon = document.getElementById('brandIcon');
+const easeInOutCubic = t => (t<0.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2);
+const clamp01 = n => Math.max(0, Math.min(1, n));
+const lerp = (a,b,t) => a + (b-a) * t;
+let ticking=false;
+function onScroll(){
+  if(!ticking){
+    requestAnimationFrame(()=>{
+      const vh = window.innerHeight || 1;
+      const pRaw = clamp01(window.scrollY / vh);
+      const p = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : easeInOutCubic(pRaw);
+      const ty = lerp(0, 500, p), sc = lerp(1, 0, p), op = lerp(1, 0, p);
+      logoWrap.style.transform = `translateY(${ty}px) scale(${sc})`;
+      logoWrap.style.opacity = op;
+      brandIcon.style.opacity = String(p);
+      ticking=false;
+    });
+    ticking=true;
+  }
+}
+window.addEventListener('scroll', onScroll, {passive:true});
+
+/* ===== Dados dos projetos ===== */
+const projetos=[
+  {titulo:"intuitive curation",descricao:"projeto vencedor do y-hack 2024, concurso promovido pela y-human e idealizado por pedro andrade e paula kim, cujo propósito era o desenvolvimento de uma coleção que unisse design, sustentabilidade e regeneração. atuei no desenvolvimento do conceito da coleção, na definição do mix de produtos e na criação do pitch.",frames:["img/intuitive1.png","img/intuitive2.png","img/intuitive3.png","img/intuitive3.png","img/intuitive4.png","img/intuitive5.png","img/intuitive6.png","img/intuitive7.png","img/intuitive8.png","img/intuitive9.png","img/intuitive10.png","img/intuitive11.png","img/intuitive12.png","img/intuitive13.png","img/intuitive14.png","img/intuitive15.png","img/intuitive16.png","img/intuitive17.png","img/intuitive18.png","img/intuitive19.png","img/intuitive20.png"],frame:0},
+  {titulo:"consulado das empanadas",descricao:"projeto acadêmico com o objetivo de desenvolver uma identidade visual completa para um microempreendedor local. minha atuação focou na elaboração e digramação do manual da marca, que estabelece as diretrizes de uso dos elementos visuais, e na criação de mockups para demonstrar a aplicação da identidade em materiais práticos.",frames:[
+    "img/empanadas1.jpg","img/empanadas2.jpg","img/empanadas3.jpg","img/empanadas4.jpg","img/empanadas5.jpg","img/empanadas6.jpg","img/empanadas7.jpg","img/empanadas8.jpg","img/empanadas9.jpg","img/empanadas10.jpg","img/empanadas11.jpg","img/empanadas12.jpg","img/empanadas13.jpg","img/empanadas14.jpg","img/empanadas15.jpg","img/empanadas16.jpg","img/empanadas17.jpg","img/empanadas18.jpg","img/empanadas19.jpg","img/empanadas20.jpg","img/empanadas21.jpg","img/empanadas22.jpg","img/empanadas23.jpg","img/empanadas24.jpg","img/empanadas25.jpg","img/empanadas26.jpg","img/empanadas27.jpg"
+  ],frame:0},
+  {titulo:"caixa preta",descricao:"atuo como designer principal em um coletivo de artistas da região dos lagos, sendo responsável por toda a sua linguagem visual. meu trabalho vai desde a concepção da identidade da marca-mãe até a criação de conceitos e identidades visuais para cada evento que produzimos. desenvolvo todas as peças para divulgação digital e crio as projeções visuais.",frames:[
+    "img/segundaedicaomain.png","img/segundaedicaodj1.png","img/segundaedicaodj2.png","img/segundaedicaomanifesto.png","img/segundaedicaotimetable.png","img/segundaedicaoregras.png","img/segundaedicaostory.png","img/segundaedicaosorteio.png","img/primeiraedicaomain.png","img/primeiraedicaoshotgun.png","img/primeiraedicaodj1.png","img/primeiraedicaodj2.png","img/primeiraedicaodj3.png","img/primeiraedicaotimetable.jpg","img/primeiraedicaoregras.jpg","img/primeiraedicaostory.png"
+  ],frame:0},
+  {titulo:"projetos pessoais",descricao:"alguns projetos pessoais que realizo tanto por gosto, quanto para desenvolver novas técnicas de edição, diagramação, tipografia.",frames:[
+    "img/caixapretasp.png","img/caixapretagambiarra.png","img/caixapretaeva.png","img/underscores1.png","img/underscores2.png","img/underscores3.png","img/dancer1.png","img/dancer2.png","img/dancer3.png","img/aniversario.png"
+  ],frame:0},
+  {titulo:"projetos acadêmicos",descricao:"alguns projetos acadêmicos que desenvolvi, aprimorando outras técnicas além das que já estou familiarizado, e tiveram resultados legais",frames:[
+    "img/metal1.jpg","img/metal2.jpg","img/metal3.jpg","img/metal4.jpg","img/roupa1.jpg","img/roupa2.jpg","img/roupa3.jpg","img/roupa4.jpg"
+  ],frame:0}
+];
+
+/* ===== GALERIA (DESKTOP) ===== */
+const elCarousel=document.getElementById('carousel');
+const elTitulo=document.getElementById('titulo');
+const elDescricao=document.getElementById('descricao');
+let centro=0,autoInterval=null,restartTimeout=null;
+
+function criarProjetoDesktop(i){
+  const el=document.createElement('article');
+  el.className='projeto pos-fila'; el.dataset.index=i;
+
+  const frame=document.createElement('div'); frame.className='frame';
+  aplicarValorEmFrameDesktop(frame, projetos[i].frames[0]);
+  el.appendChild(frame);
+
+  // Clique: centro troca imagem; lateral vem para o centro
+  el.addEventListener('click',()=>{
+    if(+el.dataset.index===centro){
+      avancarFrame(i);
+      aplicarValorEmFrameDesktop(frame, projetos[i].frames[projetos[i].frame]);
+    }else{
+      trazerParaCentro(i);
+    }
+    resetAutoCountdown();
+  });
+
+  // Acessível
+  el.tabIndex=0;
+  el.setAttribute('role','button');
+  el.setAttribute('aria-label', `Abrir ${projetos[i].titulo}`);
+  el.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); el.click(); } });
+  return el;
+}
+
+function aplicarValorEmFrameDesktop(frameEl, value){
+  if (frameEl.dataset.current === value) return;
+  frameEl.dataset.current = value;
+  const next = document.createElement('div');
+  next.className = 'layer';
+  if (/^#/.test(value)) next.style.background = value; else next.style.backgroundImage = `url("${encodeURI(value)}")`;
+  next.style.opacity = '0';
+  frameEl.appendChild(next);
+
+  const layers = frameEl.querySelectorAll('.layer');
+  const prev = layers.length > 1 ? layers[0] : null;
+
+  const maybeFade = () => {
+    requestAnimationFrame(()=>{
+      next.style.opacity = '1';
+      if (prev){ prev.style.opacity='0'; prev.addEventListener('transitionend', () => prev.remove(), { once:true }); }
+    });
+  };
+
+  if (/^#/.test(value)) { maybeFade(); return; }
+  const img = new Image();
+  img.src = next.style.backgroundImage.slice(5, -2);
+  if (img.decode) img.decode().then(maybeFade).catch(maybeFade);
+  else if (img.complete) maybeFade();
+  else { img.onload = maybeFade; img.onerror = maybeFade; }
+
+  const all = frameEl.querySelectorAll('.layer');
+  for (let i = 0; i < all.length - 2; i++) all[i].remove();
+}
+
+projetos.forEach((_,i)=>elCarousel.appendChild(criarProjetoDesktop(i)));
+
+function aplicarPosicoes(){
+  const n=projetos.length, esq=(centro-1+n)%n, dir=(centro+1)%n;
+  [...elCarousel.children].forEach(el=>{
+    const i=+el.dataset.index;
+    el.classList.remove('pos-esq','pos-centro','pos-dir','pos-fila');
+    if(i===centro) el.classList.add('pos-centro');
+    else if(i===esq) el.classList.add('pos-esq');
+    else if(i===dir) el.classList.add('pos-dir');
+    else el.classList.add('pos-fila');
+  });
+  elTitulo.textContent=projetos[centro].titulo;
+  elDescricao.textContent=projetos[centro].descricao;
+}
+
+aplicarPosicoes();
+function passo(){ centro=(centro+1+projetos.length)%projetos.length; aplicarPosicoes(); }
+function startAuto(){ stopAuto(); autoInterval=setInterval(passo,10000); }
+function stopAuto(){ if(autoInterval){ clearInterval(autoInterval); autoInterval=null; } }
+function resetAutoCountdown(){ stopAuto(); if(restartTimeout) clearTimeout(restartTimeout); restartTimeout=setTimeout(startAuto,15000); }
+startAuto();
+function trazerParaCentro(idx){ centro=idx; aplicarPosicoes(); }
+function avancarFrame(i){ projetos[i].frame=(projetos[i].frame+1)%projetos[i].frames.length; }
+function voltarFrame(i){ projetos[i].frame=(projetos[i].frame-1+projetos[i].frames.length)%projetos[i].frames.length; }
+
+/* ===== LISTA (MOBILE) ===== */
+const elListaMobile = document.getElementById('listaMobile');
+const mediaMobile = window.matchMedia('(max-width: 768px)');
+let mobileEls = [];
+let modoAtual = mediaMobile.matches ? 'mobile' : 'desktop';
+
+function construirListaMobile(){
+  elListaMobile.innerHTML = ''; mobileEls = [];
+  projetos.forEach((proj, i)=>{
+    const art = document.createElement('article');
+    art.className = 'projMobile'; art.dataset.index = i;
+
+    const h3 = document.createElement('h3'); h3.className = 'tituloMobile'; h3.textContent = proj.titulo; art.appendChild(h3);
+
+    const frame = document.createElement('div'); frame.className = 'frameMobile';
+    const wrap = document.createElement('div'); wrap.className = 'mediaWrap'; wrap.style.aspectRatio = '16 / 9';
+    const imgA = document.createElement('img'); imgA.className = 'layer on'; imgA.alt = proj.titulo || ''; imgA.decoding='async'; imgA.loading='lazy';
+    const imgB = document.createElement('img'); imgB.className = 'layer';   imgB.alt = proj.titulo || ''; imgB.decoding='async'; imgB.loading='lazy';
+    wrap.appendChild(imgA); wrap.appendChild(imgB); frame.appendChild(wrap); art.appendChild(frame);
+
+    const desc = document.createElement('p'); desc.className = 'descricaoMobile'; desc.textContent = proj.descricao; art.appendChild(desc);
+
+    elListaMobile.appendChild(art);
+    mobileEls[i] = { wrap, on: imgA, off: imgB, ar: '16 / 9' };
+    atualizarFrameMobile(i); // 1º frame
+    anexarSwipe(art, i);     // swipe horizontal
+  });
+}
+
+function atualizarFrameMobile(i){
+  const m = mobileEls[i]; if(!m) return;
+  const valor = projetos[i].frames[projetos[i].frame];
+  if(/^#/.test(valor)){
+    m.wrap.style.background = valor;
+    m.on.classList.remove('on'); m.off.classList.remove('on');
+    return;
+  }
+  m.wrap.style.background = 'transparent';
+  const nextUrl = encodeURI(valor);
+  if (m.wrap.dataset.current === nextUrl) return;
+  const tmp = new Image(); tmp.decoding='async'; tmp.src = nextUrl;
+  const show = () => {
+    if (tmp.naturalWidth && tmp.naturalHeight){
+      const ratio = `${tmp.naturalWidth} / ${tmp.naturalHeight}`;
+      m.wrap.style.aspectRatio = ratio; m.ar = ratio;
+    } else { m.wrap.style.aspectRatio = m.ar || '16 / 9'; }
+    m.off.src = nextUrl;
+    requestAnimationFrame(()=>{ m.off.classList.add('on'); m.on.classList.remove('on'); const t=m.on; m.on=m.off; m.off=t; m.wrap.dataset.current = nextUrl; });
+  };
+  if (tmp.decode) tmp.decode().then(show).catch(show); else if (tmp.complete) show(); else { tmp.onload=show; tmp.onerror=show; }
+}
+
+function anexarSwipe(el, index){
+  let sx=0, sy=0, dx=0, dy=0, ativo=false; const THRESH = 40;
+  el.addEventListener('touchstart', (e)=>{ const t=e.changedTouches[0]; sx=t.clientX; sy=t.clientY; dx=dy=0; ativo=true; }, {passive:true});
+  el.addEventListener('touchmove',  (e)=>{ if(!ativo) return; const t=e.changedTouches[0]; dx=t.clientX-sx; dy=t.clientY-sy; }, {passive:true});
+  el.addEventListener('touchend',   ()=>{ if(!ativo) return; ativo=false; if(Math.abs(dx) > Math.max(THRESH, Math.abs(dy))){ if(dx<0){ avancarFrame(index); } else { voltarFrame(index); } atualizarFrameMobile(index);} }, {passive:true});
+}
+
+function entrarMobile(){ stopAuto(); construirListaMobile(); }
+function entrarDesktop(){ startAuto(); }
+if(modoAtual === 'mobile'){ entrarMobile(); } else { entrarDesktop(); }
+mediaMobile.addEventListener('change', (e)=>{ const novo = e.matches ? 'mobile' : 'desktop'; if(novo===modoAtual) return; modoAtual=novo; if(novo==='mobile'){ entrarMobile(); } else { entrarDesktop(); } });
+</script>
+
+<!-- Cursor custom (desktop) -->
+<script>
+(() => {
+  if (!matchMedia('(pointer: fine)').matches) return;
+  const style = document.createElement('style');
+  style.textContent = `
+    .cursor-disc{ position:fixed; left:0; top:0; width:56px; height:56px; background:#fff; border-radius:50%; pointer-events:none; mix-blend-mode:difference; transform:translate(-50%,-50%); z-index:2147483647; opacity:0; transition: width .12s ease-out, height .12s ease-out, opacity .18s ease-out, transform .12s ease-out, background-color .12s ease-out, mix-blend-mode .12s ease-out; }
+    .cursor-disc.is-visible{ opacity:1; }
+    .cursor-disc.is-down{ transform:translate(-50%,-50%) scale(.9); }
+    .cursor-disc.is-hot{ background: rgb(0,255,0); mix-blend-mode: normal; }
+    html, body, :where(a, button, input, select, textarea, label, summary,[role="button"],[role="link"],.clickable,[onclick],[tabindex]){ cursor:none !important; }
+  `;
+  (document.head || document.documentElement).appendChild(style);
+  const disc = document.createElement('div'); disc.className = 'cursor-disc'; disc.setAttribute('aria-hidden','true'); document.body.appendChild(disc);
+  const clickableSelector = 'a,button,input,select,textarea,summary,label,[role="button"],[role="link"],.clickable';
+  const isClickable = el => !!(el && (el.closest(clickableSelector) || getComputedStyle(el).cursor === 'pointer' || el.onclick || el.getAttribute('onclick')));
+  let x=0, y=0, raf=null; const draw=()=>{ disc.style.left = x + 'px'; disc.style.top = y + 'px'; raf=null; };
+  addEventListener('mousemove', e => { x=e.clientX; y=e.clientY; disc.classList.add('is-visible'); disc.classList.toggle('is-hot', isClickable(e.target)); if(!raf) raf=requestAnimationFrame(draw); }, {passive:true});
+  addEventListener('mouseleave', () => disc.classList.remove('is-visible'), {passive:true});
+  addEventListener('mousedown', () => disc.classList.add('is-down'), {passive:true});
+  addEventListener('mouseup',   () => disc.classList.remove('is-down'), {passive:true});
+})();
+</script>
+</body>
+</html>
