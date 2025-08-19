@@ -1,2 +1,7 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# dentro da pasta do seu site
+git init
+git add .
+git commit -m "site"
+git branch -M main
+git remote add origin https://github.com/gzomignani/meu-site.git
+git push -u origin main
