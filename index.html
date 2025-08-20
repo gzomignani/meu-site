@@ -354,7 +354,7 @@ function atualizarFrameMobile(i){
 
 function anexarSwipe(el, index){
   let startX=0, startY=0, x=0, y=0, active=false, locked=false;
-  const THRESH = 16; // quanto precisa arrastar p/ considerar swipe
+  const THRESH = 20; // quanto precisa arrastar p/ considerar swipe
 
   el.addEventListener('pointerdown', (e)=>{
     active = true; locked = false;
