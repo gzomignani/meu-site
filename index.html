@@ -112,6 +112,44 @@
 /* manter rolagem vertical normal no mobile */
 .projMobile{ touch-action: pan-y pinch-zoom; }
 
+      /* ==== MOBILE: swipe nativo por projeto (igual tiagolo.com) ==== */
+@media (max-width: 768px){
+  /* desliga o frame antigo do mobile (crossfade) */
+  .frameMobile{ display:none !important; }
+
+  /* trilho interno com swipe horizontal */
+  .slides{
+    display:flex;
+    overflow-x:auto;
+    overflow-y:hidden;
+    gap:0;
+    margin:0;
+    padding:0;                 /* sem padding lateral */
+    scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;      /* Firefox: oculta barra */
+    touch-action: pan-x pan-y pinch-zoom; /* permite swipe horizontal */
+  }
+  .slides::-webkit-scrollbar{ display:none; } /* WebKit */
+
+  /* cada imagem ocupa 100% da largura; altura auto preserva a proporção */
+  .slides img{
+    flex:0 0 100%;
+    min-width:100%;
+    width:100%;
+    height:auto;               /* mantém proporção original */
+    display:block;
+    scroll-snap-align:start;
+    scroll-snap-stop:always;   /* não “pula” múltiplos slides */
+    margin:0;
+    background:transparent;
+  }
+
+  /* pequena margem entre projetos (mantendo full-bleed) */
+  .projMobile{ margin:12px 0; }
+}
+
+
     }
   </style>
 </head>
@@ -295,39 +333,56 @@ function preloadAround(index){
 }
 
   function construirListaMobile(){
-  elListaMobile.innerHTML = ''; mobileEls = [];
-  projetos.forEach((proj, i)=>{
+  elListaMobile.innerHTML = '';
+  mobileEls = [];
+
+  projetos.forEach((proj, i) => {
     const art = document.createElement('article');
-    art.className = 'projMobile'; art.dataset.index = i;
+    art.className = 'projMobile';
+    art.dataset.index = i;
 
-    const h3 = document.createElement('h3'); h3.className = 'tituloMobile'; h3.textContent = proj.titulo; art.appendChild(h3);
+    const h3 = document.createElement('h3');
+    h3.className = 'tituloMobile';
+    h3.textContent = proj.titulo;
+    art.appendChild(h3);
 
-    const frame = document.createElement('div'); frame.className = 'frameMobile';
-    const wrap = document.createElement('div'); wrap.className = 'mediaWrap'; wrap.style.aspectRatio = '16 / 9';
-    const imgA = document.createElement('img'); imgA.className = 'layer on'; imgA.alt = proj.titulo || ''; imgA.decoding='async'; imgA.loading='lazy';
-    const imgB = document.createElement('img'); imgB.className = 'layer';   imgB.alt = proj.titulo || ''; imgB.decoding='async'; imgB.loading='lazy';
-    wrap.appendChild(imgA); wrap.appendChild(imgB); frame.appendChild(wrap); art.appendChild(frame);
+    // === NOVO: trilho com swipe nativo (scroll-snap) ===
+    const slides = document.createElement('div');
+    slides.className = 'slides';
 
-    const desc = document.createElement('p'); desc.className = 'descricaoMobile'; desc.textContent = proj.descricao; art.appendChild(desc);
+    proj.frames.forEach((src, idx) => {
+      if (/^#/.test(src)) {
+        // Se ainda existir algum frame como cor, gera um PNG 1x1 colorido
+        const ph = document.createElement('img');
+        const color = src.replace('#','');
+        // data URI 1x1 transparente com background via CSS não preserva proporção,
+        // então usamos um SVG embutido da cor desejada:
+        ph.src = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10'><rect width='10' height='10' fill='%23${color}'/></svg>`;
+        ph.alt = proj.titulo || '';
+        ph.loading = idx === 0 ? 'eager' : 'lazy';
+        slides.appendChild(ph);
+      } else {
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = proj.titulo || '';
+        img.loading = idx === 0 ? 'eager' : 'lazy'; // 1ª carrega já, as demais lazy
+        slides.appendChild(img);
+      }
+    });
+
+    art.appendChild(slides);
+
+    const desc = document.createElement('p');
+    desc.className = 'descricaoMobile';
+    desc.textContent = proj.descricao;
+    art.appendChild(desc);
 
     elListaMobile.appendChild(art);
-    mobileEls[i] = { wrap, on: imgA, off: imgB, ar: '16 / 9' };
-    atualizarFrameMobile(i);
-preloadAround(i);
-anexarSwipe(art, i);
-
+    // guardamos referência só se precisar no futuro
+    mobileEls[i] = { slides };
   });
 }
 
-function atualizarFrameMobile(i){
-  const m = mobileEls[i]; if(!m) return;
-  const valor = projetos[i].frames[projetos[i].frame];
-
-  if(/^#/.test(valor)){
-    m.wrap.style.background = valor;
-    m.on.classList.remove('on'); m.off.classList.remove('on');
-    return;
-  }
 
   m.wrap.style.background = 'transparent';
   const nextUrl = encodeURI(valor);
@@ -350,45 +405,6 @@ function atualizarFrameMobile(i){
   // usa o cache de decode (sem "jump" de frame)
   preload(nextUrl).then(show);
 }
-
-
-function anexarSwipe(el, index){
-  let startX=0, startY=0, x=0, y=0, active=false, locked=false;
-  const THRESH = 20; // quanto precisa arrastar p/ considerar swipe
-
-  el.addEventListener('pointerdown', (e)=>{
-    active = true; locked = false;
-    startX = x = e.clientX; startY = y = e.clientY;
-    // captura evita que o evento “escape” do elemento
-    try { el.setPointerCapture(e.pointerId); } catch(_) {}
-  }, {passive:true});
-
-  el.addEventListener('pointermove', (e)=>{
-    if(!active) return;
-    x = e.clientX; y = e.clientY;
-    const dx = x - startX, dy = y - startY;
-
-    // trava em horizontal quando detecta intenção
-    if(!locked && Math.abs(dx) > Math.max(THRESH, Math.abs(dy))){
-      locked = true;
-    }
-    // quando travado em horizontal, impede a rolagem vertical
-    if(locked) e.preventDefault();
-
-    // dispara a troca assim que passar o limiar (sem esperar soltar)
-    if(locked && Math.abs(dx) > THRESH){
-      if(dx < 0){ avancarFrame(index); } else { voltarFrame(index); }
-      atualizarFrameMobile(index);
-      // reseta a origem para permitir múltiplas trocas no mesmo gesto
-      startX = x; startY = y;
-    }
-  }, {passive:false}); // importante: false para poder chamar preventDefault
-
-  const end = () => { active=false; locked=false; };
-  el.addEventListener('pointerup', end, {passive:true});
-  el.addEventListener('pointercancel', end, {passive:true});
-}
-
 
 function entrarMobile(){ stopAuto(); construirListaMobile(); }
 function entrarDesktop(){ startAuto(); }
