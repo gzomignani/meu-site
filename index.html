@@ -6,18 +6,19 @@
   <title>gabriel zomignani</title>
   <link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@500;600&display=swap" rel="stylesheet">
   <meta name="theme-color" content="#111" />
-  <!-- Favicon / Pinned tab -->
   <link rel="icon" href="/icone.svg" type="image/svg+xml">
   <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#111">
   <style>
     :root{
       --bg:#fff; --fg:#111;
       --gap:clamp(16px, 2.8vw, 36px);
+
       /* Dimensões base (desktop) */
       --side-w:clamp(140px, 12vw, 220px);
       --side-h:clamp(360px, 62vh, 720px);
       --main-w:clamp(520px, calc(100vw - (2 * var(--side-w)) - (2 * var(--gap))), 1600px);
       --main-h:clamp(420px, 70vh, 860px);
+
       --text-gap:clamp(14px, 2.2vw, 28px);
       --ease:cubic-bezier(.22,.61,.36,1);
     }
@@ -28,7 +29,10 @@
       margin:0; background:var(--bg); color:var(--fg);
       font-family:"Host Grotesk", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       overflow-x:hidden;
-      cursor:none; /* cursor customizado (desktop) */
+    }
+    /* cursor custom só em dispositivos com ponteiro fino (desktop) */
+    @media (pointer: fine){
+      body{ cursor:none; }
     }
 
     /* ===== HERO ===== */
@@ -94,62 +98,37 @@
       .stage{ position:static; }
       /* Esconde layout do carrossel no mobile */
       .titulo, .descricao, .carousel{ display:none !important; }
-      /* Mostra a lista empilhada (sem padding lateral) */
-      .listaMobile{ display:block; width:100vw; }
 
-      .projMobile{ width:100vw; margin: clamp(12px, 3.2vw, 22px) 0; touch-action: pan-y; }
-      .tituloMobile{ margin: 0 0 clamp(8px, 2.4vw, 12px) 0; font-weight:600; font-size: clamp(18px, 4vw, 24px); line-height:1.1; }
+      /* Mostra a lista empilhada (full-bleed, sem padding lateral) */
+      .listaMobile{ display:block; width:100%; }
 
-      .frameMobile{ position:relative; }
-      .frameMobile .mediaWrap{ position:relative; width:100%; aspect-ratio:16 / 9; overflow:hidden; background:var(--bg); }
-      .frameMobile .mediaWrap > img.layer{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; display:block; opacity:0; transition:opacity 260ms var(--ease); }
-      .frameMobile .mediaWrap > img.layer.on{ opacity:1; }
+      .projMobile{ width:100%; margin:12px 0; }
+      .tituloMobile{ margin: 0 0 clamp(8px, 2.4vw, 12px) 0; font-weight:600; font-size: clamp(18px, 4vw, 24px); line-height:1.1; padding:0 0; }
+      .descricaoMobile{ margin: clamp(8px, 2.6vw, 14px) 0 0 0; font-weight:500; font-size: clamp(14px, 3.6vw, 18px); line-height:1.35; text-align:left; padding:0 0; }
 
-      .descricaoMobile{ margin: clamp(8px, 2.6vw, 14px) 0 0 0; font-weight:500; font-size: clamp(14px, 3.6vw, 18px); line-height:1.35; text-align:left; }
-
-      /* ajuda a GPU a preparar o fade */
-.frameMobile .mediaWrap > img.layer{ will-change: opacity; }
-/* manter rolagem vertical normal no mobile */
-.projMobile{ touch-action: pan-y pinch-zoom; }
-
-      /* ==== MOBILE: swipe nativo por projeto (igual tiagolo.com) ==== */
-@media (max-width: 768px){
-  /* desliga o frame antigo do mobile (crossfade) */
-  .frameMobile{ display:none !important; }
-
-  /* trilho interno com swipe horizontal */
-  .slides{
-    display:flex;
-    overflow-x:auto;
-    overflow-y:hidden;
-    gap:0;
-    margin:0;
-    padding:0;                 /* sem padding lateral */
-    scroll-snap-type:x mandatory;
-    -webkit-overflow-scrolling:touch;
-    scrollbar-width:none;      /* Firefox: oculta barra */
-    touch-action: pan-x pan-y pinch-zoom; /* permite swipe horizontal */
-  }
-  .slides::-webkit-scrollbar{ display:none; } /* WebKit */
-
-  /* cada imagem ocupa 100% da largura; altura auto preserva a proporção */
-  .slides img{
-    flex:0 0 100%;
-    min-width:100%;
-    width:100%;
-    height:auto;               /* mantém proporção original */
-    display:block;
-    scroll-snap-align:start;
-    scroll-snap-stop:always;   /* não “pula” múltiplos slides */
-    margin:0;
-    background:transparent;
-  }
-
-  /* pequena margem entre projetos (mantendo full-bleed) */
-  .projMobile{ margin:12px 0; }
-}
-
-
+      /* ==== SWIPE igual ao tiagolo.com (scroll-snap por projeto) ==== */
+      .slides{
+        display:flex;
+        overflow-x:auto;
+        overflow-y:hidden;
+        scroll-snap-type:x mandatory;
+        -webkit-overflow-scrolling:touch;
+        gap:0; margin:0; padding:0;
+        scrollbar-width:none;
+        touch-action: pan-x pan-y pinch-zoom;
+      }
+      .slides::-webkit-scrollbar{ display:none; }
+      .slides img{
+        flex:0 0 100%;
+        min-width:100%;
+        width:100%;
+        height:auto;                /* mantém proporção original */
+        display:block;
+        scroll-snap-align:start;
+        scroll-snap-stop:always;
+        margin:0;
+        background:transparent;
+      }
     }
   </style>
 </head>
@@ -242,7 +221,7 @@ function criarProjetoDesktop(i){
     resetAutoCountdown();
   });
 
-  // Acessível
+  // Acessibilidade
   el.tabIndex=0;
   el.setAttribute('role','button');
   el.setAttribute('aria-label', `Abrir ${projetos[i].titulo}`);
@@ -295,8 +274,8 @@ function aplicarPosicoes(){
   elTitulo.textContent=projetos[centro].titulo;
   elDescricao.textContent=projetos[centro].descricao;
 }
-
 aplicarPosicoes();
+
 function passo(){ centro=(centro+1+projetos.length)%projetos.length; aplicarPosicoes(); }
 function startAuto(){ stopAuto(); autoInterval=setInterval(passo,10000); }
 function stopAuto(){ if(autoInterval){ clearInterval(autoInterval); autoInterval=null; } }
@@ -304,70 +283,37 @@ function resetAutoCountdown(){ stopAuto(); if(restartTimeout) clearTimeout(resta
 startAuto();
 function trazerParaCentro(idx){ centro=idx; aplicarPosicoes(); }
 function avancarFrame(i){ projetos[i].frame=(projetos[i].frame+1)%projetos[i].frames.length; }
-function voltarFrame(i){ projetos[i].frame=(projetos[i].frame-1+projetos[i].frames.length)%projetos[i].frames.length; }
 
-/* ===== LISTA (MOBILE) ===== */
+/* ===== LISTA (MOBILE) — swipe nativo com scroll-snap ===== */
 const elListaMobile = document.getElementById('listaMobile');
 const mediaMobile = window.matchMedia('(max-width: 768px)');
-let mobileEls = [];
 let modoAtual = mediaMobile.matches ? 'mobile' : 'desktop';
 
-// ===== Preload de imagens para reduzir espera de decode =====
-const decodeCache = new Map();
-function preload(url){
-  if(!url) return Promise.resolve();
-  const u = encodeURI(url);
-  if (decodeCache.has(u)) return decodeCache.get(u);
-  const img = new Image(); img.decoding = 'async'; img.src = u;
-  const p = (img.decode ? img.decode() :
-            new Promise(r => { img.onload = img.onerror = r; }))
-            .then(() => u, () => u);
-  decodeCache.set(u, p);
-  return p;
-}
-function preloadAround(index){
-  const arr = projetos[index].frames;
-  const i = projetos[index].frame;
-  preload(arr[(i+1) % arr.length]);
-  preload(arr[(i-1+arr.length) % arr.length]);
-}
-
-  function construirListaMobile(){
+function construirListaMobile(){
   elListaMobile.innerHTML = '';
-  mobileEls = [];
-
-  projetos.forEach((proj, i) => {
+  projetos.forEach((proj) => {
     const art = document.createElement('article');
     art.className = 'projMobile';
-    art.dataset.index = i;
 
     const h3 = document.createElement('h3');
     h3.className = 'tituloMobile';
     h3.textContent = proj.titulo;
     art.appendChild(h3);
 
-    // === NOVO: trilho com swipe nativo (scroll-snap) ===
     const slides = document.createElement('div');
     slides.className = 'slides';
 
     proj.frames.forEach((src, idx) => {
+      const img = document.createElement('img');
       if (/^#/.test(src)) {
-        // Se ainda existir algum frame como cor, gera um PNG 1x1 colorido
-        const ph = document.createElement('img');
         const color = src.replace('#','');
-        // data URI 1x1 transparente com background via CSS não preserva proporção,
-        // então usamos um SVG embutido da cor desejada:
-        ph.src = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10'><rect width='10' height='10' fill='%23${color}'/></svg>`;
-        ph.alt = proj.titulo || '';
-        ph.loading = idx === 0 ? 'eager' : 'lazy';
-        slides.appendChild(ph);
+        img.src = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10'><rect width='10' height='10' fill='%23${color}'/></svg>`;
       } else {
-        const img = document.createElement('img');
         img.src = src;
-        img.alt = proj.titulo || '';
-        img.loading = idx === 0 ? 'eager' : 'lazy'; // 1ª carrega já, as demais lazy
-        slides.appendChild(img);
       }
+      img.alt = proj.titulo || '';
+      img.loading = idx === 0 ? 'eager' : 'lazy';
+      slides.appendChild(img);
     });
 
     art.appendChild(slides);
@@ -378,38 +324,19 @@ function preloadAround(index){
     art.appendChild(desc);
 
     elListaMobile.appendChild(art);
-    // guardamos referência só se precisar no futuro
-    mobileEls[i] = { slides };
   });
-}
-
-
-  m.wrap.style.background = 'transparent';
-  const nextUrl = encodeURI(valor);
-  if (m.wrap.dataset.current === nextUrl) return;
-
-  const show = () => {
-    const tmp = new Image(); tmp.src = nextUrl;
-    const w = tmp.naturalWidth, h = tmp.naturalHeight;
-    m.wrap.style.aspectRatio = (w && h) ? `${w} / ${h}` : (m.ar || '16 / 9');
-    m.off.src = nextUrl;
-    requestAnimationFrame(()=>{
-      m.off.classList.add('on');
-      m.on.classList.remove('on');
-      const t = m.on; m.on = m.off; m.off = t;
-      m.wrap.dataset.current = nextUrl;
-      preloadAround(i); // já adianta a próxima e a anterior
-    });
-  };
-
-  // usa o cache de decode (sem "jump" de frame)
-  preload(nextUrl).then(show);
 }
 
 function entrarMobile(){ stopAuto(); construirListaMobile(); }
 function entrarDesktop(){ startAuto(); }
+
 if(modoAtual === 'mobile'){ entrarMobile(); } else { entrarDesktop(); }
-mediaMobile.addEventListener('change', (e)=>{ const novo = e.matches ? 'mobile' : 'desktop'; if(novo===modoAtual) return; modoAtual=novo; if(novo==='mobile'){ entrarMobile(); } else { entrarDesktop(); } });
+mediaMobile.addEventListener('change', (e)=>{
+  const novo = e.matches ? 'mobile' : 'desktop';
+  if(novo===modoAtual) return;
+  modoAtual=novo;
+  if(novo==='mobile'){ entrarMobile(); } else { entrarDesktop(); }
+});
 </script>
 
 <!-- Cursor custom (desktop) -->
