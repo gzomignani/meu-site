@@ -106,6 +106,12 @@
       .frameMobile .mediaWrap > img.layer.on{ opacity:1; }
 
       .descricaoMobile{ margin: clamp(8px, 2.6vw, 14px) 0 0 0; font-weight:500; font-size: clamp(14px, 3.6vw, 18px); line-height:1.35; text-align:left; }
+
+      /* ajuda a GPU a preparar o fade */
+.frameMobile .mediaWrap > img.layer{ will-change: opacity; }
+/* manter rolagem vertical normal no mobile */
+.projMobile{ touch-action: pan-y pinch-zoom; }
+
     }
   </style>
 </head>
@@ -268,7 +274,27 @@ const mediaMobile = window.matchMedia('(max-width: 768px)');
 let mobileEls = [];
 let modoAtual = mediaMobile.matches ? 'mobile' : 'desktop';
 
-function construirListaMobile(){
+// ===== Preload de imagens para reduzir espera de decode =====
+const decodeCache = new Map();
+function preload(url){
+  if(!url) return Promise.resolve();
+  const u = encodeURI(url);
+  if (decodeCache.has(u)) return decodeCache.get(u);
+  const img = new Image(); img.decoding = 'async'; img.src = u;
+  const p = (img.decode ? img.decode() :
+            new Promise(r => { img.onload = img.onerror = r; }))
+            .then(() => u, () => u);
+  decodeCache.set(u, p);
+  return p;
+}
+function preloadAround(index){
+  const arr = projetos[index].frames;
+  const i = projetos[index].frame;
+  preload(arr[(i+1) % arr.length]);
+  preload(arr[(i-1+arr.length) % arr.length]);
+}
+
+  function construirListaMobile(){
   elListaMobile.innerHTML = ''; mobileEls = [];
   projetos.forEach((proj, i)=>{
     const art = document.createElement('article');
@@ -286,40 +312,83 @@ function construirListaMobile(){
 
     elListaMobile.appendChild(art);
     mobileEls[i] = { wrap, on: imgA, off: imgB, ar: '16 / 9' };
-    atualizarFrameMobile(i); // 1º frame
-    anexarSwipe(art, i);     // swipe horizontal
+    atualizarFrameMobile(i);
+preloadAround(i);
+anexarSwipe(art, i);
+
   });
 }
 
 function atualizarFrameMobile(i){
   const m = mobileEls[i]; if(!m) return;
   const valor = projetos[i].frames[projetos[i].frame];
+
   if(/^#/.test(valor)){
     m.wrap.style.background = valor;
     m.on.classList.remove('on'); m.off.classList.remove('on');
     return;
   }
+
   m.wrap.style.background = 'transparent';
   const nextUrl = encodeURI(valor);
   if (m.wrap.dataset.current === nextUrl) return;
-  const tmp = new Image(); tmp.decoding='async'; tmp.src = nextUrl;
+
   const show = () => {
-    if (tmp.naturalWidth && tmp.naturalHeight){
-      const ratio = `${tmp.naturalWidth} / ${tmp.naturalHeight}`;
-      m.wrap.style.aspectRatio = ratio; m.ar = ratio;
-    } else { m.wrap.style.aspectRatio = m.ar || '16 / 9'; }
+    const tmp = new Image(); tmp.src = nextUrl;
+    const w = tmp.naturalWidth, h = tmp.naturalHeight;
+    m.wrap.style.aspectRatio = (w && h) ? `${w} / ${h}` : (m.ar || '16 / 9');
     m.off.src = nextUrl;
-    requestAnimationFrame(()=>{ m.off.classList.add('on'); m.on.classList.remove('on'); const t=m.on; m.on=m.off; m.off=t; m.wrap.dataset.current = nextUrl; });
+    requestAnimationFrame(()=>{
+      m.off.classList.add('on');
+      m.on.classList.remove('on');
+      const t = m.on; m.on = m.off; m.off = t;
+      m.wrap.dataset.current = nextUrl;
+      preloadAround(i); // já adianta a próxima e a anterior
+    });
   };
-  if (tmp.decode) tmp.decode().then(show).catch(show); else if (tmp.complete) show(); else { tmp.onload=show; tmp.onerror=show; }
+
+  // usa o cache de decode (sem "jump" de frame)
+  preload(nextUrl).then(show);
 }
 
+
 function anexarSwipe(el, index){
-  let sx=0, sy=0, dx=0, dy=0, ativo=false; const THRESH = 40;
-  el.addEventListener('touchstart', (e)=>{ const t=e.changedTouches[0]; sx=t.clientX; sy=t.clientY; dx=dy=0; ativo=true; }, {passive:true});
-  el.addEventListener('touchmove',  (e)=>{ if(!ativo) return; const t=e.changedTouches[0]; dx=t.clientX-sx; dy=t.clientY-sy; }, {passive:true});
-  el.addEventListener('touchend',   ()=>{ if(!ativo) return; ativo=false; if(Math.abs(dx) > Math.max(THRESH, Math.abs(dy))){ if(dx<0){ avancarFrame(index); } else { voltarFrame(index); } atualizarFrameMobile(index);} }, {passive:true});
+  let startX=0, startY=0, x=0, y=0, active=false, locked=false;
+  const THRESH = 24; // quanto precisa arrastar p/ considerar swipe
+
+  el.addEventListener('pointerdown', (e)=>{
+    active = true; locked = false;
+    startX = x = e.clientX; startY = y = e.clientY;
+    // captura evita que o evento “escape” do elemento
+    try { el.setPointerCapture(e.pointerId); } catch(_) {}
+  }, {passive:true});
+
+  el.addEventListener('pointermove', (e)=>{
+    if(!active) return;
+    x = e.clientX; y = e.clientY;
+    const dx = x - startX, dy = y - startY;
+
+    // trava em horizontal quando detecta intenção
+    if(!locked && Math.abs(dx) > Math.max(THRESH, Math.abs(dy))){
+      locked = true;
+    }
+    // quando travado em horizontal, impede a rolagem vertical
+    if(locked) e.preventDefault();
+
+    // dispara a troca assim que passar o limiar (sem esperar soltar)
+    if(locked && Math.abs(dx) > THRESH){
+      if(dx < 0){ avancarFrame(index); } else { voltarFrame(index); }
+      atualizarFrameMobile(index);
+      // reseta a origem para permitir múltiplas trocas no mesmo gesto
+      startX = x; startY = y;
+    }
+  }, {passive:false}); // importante: false para poder chamar preventDefault
+
+  const end = () => { active=false; locked=false; };
+  el.addEventListener('pointerup', end, {passive:true});
+  el.addEventListener('pointercancel', end, {passive:true});
 }
+
 
 function entrarMobile(){ stopAuto(); construirListaMobile(); }
 function entrarDesktop(){ startAuto(); }
