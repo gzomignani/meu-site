@@ -130,6 +130,34 @@
         background:transparent;
       }
     }
+    @media (max-width: 768px){
+  .slides{
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 0; margin: 0; padding: 0;
+    scrollbar-width: none;
+    /* O SEGREDO: não deixar o flex esticar verticalmente */
+    align-items: center;          /* evita stretch que distorce altura */
+  }
+  .slides::-webkit-scrollbar{ display:none; }
+
+  .slides img{
+    flex: 0 0 100%;
+    min-width: 100%;
+    width: 100%;
+    height: auto !important;      /* garante preservar proporção */
+    max-height: none !important;
+    display: block;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    margin: 0;
+    background: transparent;
+    object-fit: contain;          /* redundante, mas segura em alguns WebKits */
+  }
+}
   </style>
 </head>
 <body>
