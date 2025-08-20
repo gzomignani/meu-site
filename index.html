@@ -158,6 +158,36 @@
     object-fit: contain;          /* redundante, mas segura em alguns WebKits */
   }
 }
+    /* ==== MOBILE: slides com altura dinâmica por imagem (sem bordas) ==== */
+@media (max-width: 768px){
+  .slides{
+    display:flex;
+    overflow-x:auto;
+    overflow-y:hidden;
+    scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch;
+    gap:0; margin:0; padding:0;
+    scrollbar-width:none;
+    touch-action: pan-x pan-y pinch-zoom;
+    align-items:stretch;           /* nada de esticar/centralizar verticalmente */
+    height:auto !important;        /* quem manda é o JS (altura da imagem ativa) */
+  }
+  .slides::-webkit-scrollbar{ display:none; }
+
+  .slides img{
+    flex:0 0 100%;
+    min-width:100%;
+    width:100%;
+    height:auto !important;        /* mantém proporção original */
+    display:block;
+    scroll-snap-align:start;
+    scroll-snap-stop:always;
+    margin:0;
+    background:transparent;
+    object-fit:contain;            /* segurança extra contra cortes */
+  }
+}
+
   </style>
 </head>
 <body>
@@ -355,7 +385,12 @@ function construirListaMobile(){
   });
 }
 
-function entrarMobile(){ stopAuto(); construirListaMobile(); }
+function entrarMobile(){ 
+  stopAuto(); 
+  construirListaMobile(); 
+  initMobileAutoHeight();  // <-- adiciona esta linha
+}
+
 function entrarDesktop(){ startAuto(); }
 
 if(modoAtual === 'mobile'){ entrarMobile(); } else { entrarDesktop(); }
@@ -365,6 +400,58 @@ mediaMobile.addEventListener('change', (e)=>{
   modoAtual=novo;
   if(novo==='mobile'){ entrarMobile(); } else { entrarDesktop(); }
 });
+/* ==== MOBILE: ajusta altura do trilho pela imagem visível ==== */
+function initMobileAutoHeight(){
+  const isMobile = matchMedia('(max-width: 768px)').matches;
+  if (!isMobile) return;
+
+  document.querySelectorAll('.projMobile .slides').forEach((slides) => {
+    const imgs = Array.from(slides.querySelectorAll('img'));
+
+    const calcHeightForIndex = (idx) => {
+      const img = imgs[idx] || imgs[0];
+      if (!img) return 0;
+      const cw = slides.clientWidth || img.clientWidth || 1;
+      const nw = img.naturalWidth || img.width || cw;
+      const nh = img.naturalHeight || img.height || 0;
+      if (nw && nh) return Math.round(cw * nh / nw);
+      // fallback medindo na tela
+      const r = img.getBoundingClientRect();
+      return Math.max(0, Math.round(r.height));
+    };
+
+    const setHeight = () => {
+      const idx = Math.round(slides.scrollLeft / (slides.clientWidth || 1));
+      const h = calcHeightForIndex(idx);
+      if (h) slides.style.height = h + 'px';
+    };
+
+    slides.style.transition = 'height 280ms ease';
+
+    // quando a imagem carregar, recalcula
+    imgs.forEach(img => {
+      if (img.complete) return;
+      img.addEventListener('load', setHeight);
+      img.addEventListener('error', setHeight);
+    });
+
+    // inicial
+    setHeight();
+
+    // durante o swipe (throttle via rAF)
+    let raf = null;
+    slides.addEventListener('scroll', () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => { setHeight(); raf = null; });
+    }, {passive:true});
+
+    // mudanças de tamanho/orientação
+    addEventListener('resize', setHeight);
+    addEventListener('orientationchange', setHeight);
+  });
+}
+
+  
 </script>
 
 <!-- Cursor custom (desktop) -->
