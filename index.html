@@ -92,9 +92,7 @@
     @media (max-width: 768px){
       .galeria{ height:auto; min-height:0; }
       .stage{ position:static; }
-      /* Esconde layout do carrossel no mobile */
       .titulo, .descricao, .carousel{ display:none !important; }
-      /* Mostra a lista empilhada (sem padding lateral) */
       .listaMobile{ display:block; width:100vw; }
 
       .projMobile{ width:100vw; margin: clamp(12px, 3.2vw, 22px) 0; touch-action: pan-y; }
@@ -102,7 +100,11 @@
 
       .frameMobile{ position:relative; }
       .frameMobile .mediaWrap{ position:relative; width:100%; aspect-ratio:16 / 9; overflow:hidden; background:var(--bg); }
-      .frameMobile .mediaWrap > img.layer{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; display:block; opacity:0; transition:opacity 260ms var(--ease); }
+      .frameMobile .mediaWrap > img.layer{
+        position:absolute; inset:0; width:100%; height:100%;
+        object-fit:contain; display:block; opacity:0;
+        pointer-events:none;
+      }
       .frameMobile .mediaWrap > img.layer.on{ opacity:1; }
 
       .descricaoMobile{ margin: clamp(8px, 2.6vw, 14px) 0 0 0; font-weight:500; font-size: clamp(14px, 3.6vw, 18px); line-height:1.35; text-align:left; }
@@ -163,7 +165,7 @@ const projetos=[
     "img/empanadas1.jpg","img/empanadas2.jpg","img/empanadas3.jpg","img/empanadas4.jpg","img/empanadas5.jpg","img/empanadas6.jpg","img/empanadas7.jpg","img/empanadas8.jpg","img/empanadas9.jpg","img/empanadas10.jpg","img/empanadas11.jpg","img/empanadas12.jpg","img/empanadas13.jpg","img/empanadas14.jpg","img/empanadas15.jpg","img/empanadas16.jpg","img/empanadas17.jpg","img/empanadas18.jpg","img/empanadas19.jpg","img/empanadas20.jpg","img/empanadas21.jpg","img/empanadas22.jpg","img/empanadas23.jpg","img/empanadas24.jpg","img/empanadas25.jpg","img/empanadas26.jpg","img/empanadas27.jpg"
   ],frame:0},
   {titulo:"caixa preta",descricao:"atuo como designer principal em um coletivo de artistas da região dos lagos, sendo responsável por toda a sua linguagem visual. meu trabalho vai desde a concepção da identidade da marca-mãe até a criação de conceitos e identidades visuais para cada evento que produzimos. desenvolvo todas as peças para divulgação digital e crio as projeções visuais.",frames:[
-    "img/segundaedicaomain.png","img/segundaedicaodj1.png","img/segundaedicaodj2.png","img/segundaedicaomanifesto.png","img/segundaedicaotimetable.png","img/segundaedicaoregras.png","img/segundaedicaostory.png","img/segundaedicaosorteio.png","img/primeiraedicaomain.png","img/primeiraedicaoshotgun.png","img/primeiraedicaodj1.png","img/primeiraedicaodj2.png","img/primeiraedicaodj3.png","img/primeiraedicaotimetable.jpg","img/primeiraedicaoregras.jpg","img/primeiraedicaostory.png"
+    "img/segundaedicaomain.png","img/segundaedicaodj1.png","img/segundaedicaodj2.png","img/segundaedicaomas.png","img/segundaedicaomanifesto.png","img/segundaedicaotimetable.png","img/segundaedicaoregras.png","img/segundaedicaostory.png","img/segundaedicaosorteio.png","img/primeiraedicaomain.png","img/primeiraedicaoshotgun.png","img/primeiraedicaodj1.png","img/primeiraedicaodj2.png","img/primeiraedicaodj3.png","img/primeiraedicaotimetable.jpg","img/primeiraedicaoregras.jpg","img/primeiraedicaostory.png"
   ],frame:0},
   {titulo:"projetos pessoais",descricao:"alguns projetos pessoais que realizo tanto por gosto, quanto para desenvolver novas técnicas de edição, diagramação, tipografia.",frames:[
     "img/caixapretasp.png","img/caixapretagambiarra.png","img/caixapretaeva.png","img/underscores1.png","img/underscores2.png","img/underscores3.png","img/dancer1.png","img/dancer2.png","img/dancer3.png","img/aniversario.png"
@@ -278,53 +280,138 @@ function construirListaMobile(){
 
     const frame = document.createElement('div'); frame.className = 'frameMobile';
     const wrap = document.createElement('div'); wrap.className = 'mediaWrap'; wrap.style.aspectRatio = '16 / 9';
-    const imgA = document.createElement('img'); imgA.className = 'layer on'; imgA.alt = proj.titulo || ''; imgA.decoding='async'; imgA.loading='lazy';
-    const imgB = document.createElement('img'); imgB.className = 'layer';   imgB.alt = proj.titulo || ''; imgB.decoding='async'; imgB.loading='lazy';
+    const imgA = document.createElement('img'); imgA.className = 'layer on'; imgA.alt = proj.titulo || ''; imgA.decoding='async';
+    const imgB = document.createElement('img'); imgB.className = 'layer';   imgB.alt = proj.titulo || ''; imgB.decoding='async';
     wrap.appendChild(imgA); wrap.appendChild(imgB); frame.appendChild(wrap); art.appendChild(frame);
 
     const desc = document.createElement('p'); desc.className = 'descricaoMobile'; desc.textContent = proj.descricao; art.appendChild(desc);
 
     elListaMobile.appendChild(art);
-    mobileEls[i] = { wrap, on: imgA, off: imgB, ar: '16 / 9' };
-    atualizarFrameMobile(i); // 1º frame
-    anexarSwipe(art, i);     // swipe horizontal
+    mobileEls[i] = { wrap, on: imgA, off: imgB, ar: '16 / 9', busy:false };
+    atualizarFrameMobile(i);   // primeiro frame
+    prefetchVizinhos(i);       // pré-carrega prox/ant
+    anexarSwipe(art, i);       // swipe horizontal otimizado
   });
 }
 
 function atualizarFrameMobile(i){
-  const m = mobileEls[i]; if(!m) return;
+  const m = mobileEls[i]; if(!m || m.busy) return;
   const valor = projetos[i].frames[projetos[i].frame];
+
+  // cores sólidas (se usar)
   if(/^#/.test(valor)){
+    m.busy = true;
     m.wrap.style.background = valor;
     m.on.classList.remove('on'); m.off.classList.remove('on');
+    m.wrap.dataset.current = valor;
+    m.busy = false;
     return;
   }
+
   m.wrap.style.background = 'transparent';
   const nextUrl = encodeURI(valor);
-  if (m.wrap.dataset.current === nextUrl) return;
-  const tmp = new Image(); tmp.decoding='async'; tmp.src = nextUrl;
+  if (m.wrap.dataset.current === nextUrl) { prefetchVizinhos(i); return; }
+
+  m.busy = true;
+
+  // Pré-carrega num Image fora do DOM p/ já ter dimensões e pixels
+  const tmp = new Image();
+  tmp.decoding = 'async';
+  tmp.src = nextUrl;
+
   const show = () => {
+    // Ajusta a proporção a cada imagem (comportamento original)
     if (tmp.naturalWidth && tmp.naturalHeight){
       const ratio = `${tmp.naturalWidth} / ${tmp.naturalHeight}`;
       m.wrap.style.aspectRatio = ratio; m.ar = ratio;
-    } else { m.wrap.style.aspectRatio = m.ar || '16 / 9'; }
+    } else {
+      m.wrap.style.aspectRatio = m.ar || '16 / 9';
+    }
+
     m.off.src = nextUrl;
-    requestAnimationFrame(()=>{ m.off.classList.add('on'); m.on.classList.remove('on'); const t=m.on; m.on=m.off; m.off=t; m.wrap.dataset.current = nextUrl; });
+
+    requestAnimationFrame(()=>{
+      m.off.classList.add('on');
+      m.on.classList.remove('on');
+
+      // swap refs
+      const prevOn = m.on; m.on = m.off; m.off = prevOn;
+      m.wrap.dataset.current = nextUrl;
+
+      // pré-carrega vizinhos do novo frame
+      prefetchVizinhos(i);
+
+      // liberação rápida (evita duplo avanço)
+      setTimeout(()=>{ m.busy = false; }, 170);
+    });
   };
-  if (tmp.decode) tmp.decode().then(show).catch(show); else if (tmp.complete) show(); else { tmp.onload=show; tmp.onerror=show; }
+
+  if (tmp.decode) tmp.decode().then(show).catch(show);
+  else if (tmp.complete) show();
+  else { tmp.onload = show; tmp.onerror = show; }
 }
 
+/* Pré-carrega anterior e próximo do projeto atual */
+function prefetchVizinhos(i){
+  const frames = projetos[i].frames;
+  const cur = projetos[i].frame;
+  const n = frames.length;
+  const cand = [frames[(cur+1)%n], frames[(cur-1+n)%n]];
+  cand.forEach(u=>{
+    if(!u || /^#/.test(u)) return;
+    const img = new Image();
+    img.decoding='async';
+    img.src = encodeURI(u);
+  });
+}
+
+/* >>> Swipe horizontal rápido e estável (mobile) <<< */
 function anexarSwipe(el, index){
-  let sx=0, sy=0, dx=0, dy=0, ativo=false; const THRESH = 40;
-  el.addEventListener('touchstart', (e)=>{ const t=e.changedTouches[0]; sx=t.clientX; sy=t.clientY; dx=dy=0; ativo=true; }, {passive:true});
-  el.addEventListener('touchmove',  (e)=>{ if(!ativo) return; const t=e.changedTouches[0]; dx=t.clientX-sx; dy=t.clientY-sy; }, {passive:true});
-  el.addEventListener('touchend',   ()=>{ if(!ativo) return; ativo=false; if(Math.abs(dx) > Math.max(THRESH, Math.abs(dy))){ if(dx<0){ avancarFrame(index); } else { voltarFrame(index); } atualizarFrameMobile(index);} }, {passive:true});
+  let sx=0, sy=0, dx=0, dy=0, ativo=false, startT=0;
+  const THRESH = 24;          // menor limiar = resposta mais rápida
+  const ANGLE_GUARD = 1.15;   // exige mais horizontal que vertical
+  const MAX_TIME = 700;       // tempo máximo do gesto
+
+  el.addEventListener('touchstart', (e)=>{
+    const t=e.changedTouches[0];
+    sx=t.clientX; sy=t.clientY; dx=dy=0; ativo=true; startT=performance.now();
+  }, {passive:true});
+
+  el.addEventListener('touchmove', (e)=>{
+    if(!ativo) return;
+    const t=e.changedTouches[0];
+    dx=t.clientX-sx; dy=t.clientY-sy;
+
+    // Se identificar gesto horizontal, bloqueia scroll p/ zerar delay
+    if (Math.abs(dx) > THRESH && Math.abs(dx) > ANGLE_GUARD*Math.abs(dy)) {
+      e.preventDefault(); // precisa {passive:false}
+    }
+  }, {passive:false});
+
+  el.addEventListener('touchend', ()=>{
+    if(!ativo) return; ativo=false;
+    const dt = performance.now() - startT;
+    const m = mobileEls[index];
+    if (!m || m.busy) return;
+
+    if (Math.abs(dx) > THRESH && Math.abs(dx) > ANGLE_GUARD*Math.abs(dy) && dt < MAX_TIME){
+      if (dx < 0){ avancarFrame(index); } else { voltarFrame(index); }
+      atualizarFrameMobile(index);
+    }
+  }, {passive:true});
+
+  el.addEventListener('touchcancel', ()=>{ ativo=false; }, {passive:true});
 }
 
 function entrarMobile(){ stopAuto(); construirListaMobile(); }
 function entrarDesktop(){ startAuto(); }
 if(modoAtual === 'mobile'){ entrarMobile(); } else { entrarDesktop(); }
-mediaMobile.addEventListener('change', (e)=>{ const novo = e.matches ? 'mobile' : 'desktop'; if(novo===modoAtual) return; modoAtual=novo; if(novo==='mobile'){ entrarMobile(); } else { entrarDesktop(); } });
+mediaMobile.addEventListener('change', (e)=>{
+  const novo = e.matches ? 'mobile' : 'desktop';
+  if(novo===modoAtual) return;
+  modoAtual=novo;
+  if(novo==='mobile'){ entrarMobile(); } else { entrarDesktop(); }
+});
 </script>
 
 <!-- Cursor custom (desktop) -->
@@ -333,10 +420,10 @@ mediaMobile.addEventListener('change', (e)=>{ const novo = e.matches ? 'mobile' 
   if (!matchMedia('(pointer: fine)').matches) return;
   const style = document.createElement('style');
   style.textContent = `
-    .cursor-disc{ position:fixed; left:0; top:0; width:56px; height:56px; background:#fff; border-radius:50%; pointer-events:none; mix-blend-mode:difference; transform:translate(-50%,-50%); z-index:2147483647; opacity:0; transition: width .12s ease-out, height .12s ease-out, opacity .18s ease-out, transform .12s ease-out, background-color .12s ease-out, mix-blend-mode .12s ease-out; }
+    .cursor-disc{ position:fixed; left:0; top:0; width:62px; height:62px; background:#fff; border-radius:0%; pointer-events:none; mix-blend-mode:difference; transform:translate(-50%,-50%); z-index:2147483647; opacity:0; transition: width .12s ease-out, height .12s ease-out, opacity .18s ease-out, transform .12s ease-out, background-color .12s ease-out, mix-blend-mode .12s ease-out; }
     .cursor-disc.is-visible{ opacity:1; }
     .cursor-disc.is-down{ transform:translate(-50%,-50%) scale(.9); }
-    .cursor-disc.is-hot{ background: rgb(0,255,0); mix-blend-mode: normal; }
+    .cursor-disc.is-hot{ background: rgb#fff; border-radius: 50%; mix-blend-mode: difference; }
     html, body, :where(a, button, input, select, textarea, label, summary,[role="button"],[role="link"],.clickable,[onclick],[tabindex]){ cursor:none !important; }
   `;
   (document.head || document.documentElement).appendChild(style);
