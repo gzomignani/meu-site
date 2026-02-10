@@ -4,16 +4,14 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>gabriel zomignani</title>
-  <link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@500;600;700&family=Cardo&display=swap" rel="stylesheet">
   <meta name="theme-color" content="#111" />
-  <!-- Favicon / Pinned tab -->
   <link rel="icon" href="/icone.svg" type="image/svg+xml">
   <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#111">
   <style>
     :root{
       --bg:#fff; --fg:#111;
       --gap:clamp(16px, 2.8vw, 36px);
-      /* Dimensões base (desktop) */
       --side-w:clamp(140px, 12vw, 220px);
       --side-h:clamp(360px, 62vh, 720px);
       --main-w:clamp(520px, calc(100vw - (2 * var(--side-w)) - (2 * var(--gap))), 1600px);
@@ -28,19 +26,108 @@
       margin:0; background:var(--bg); color:var(--fg);
       font-family:"Host Grotesk", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       overflow-x:hidden;
-      cursor:none; /* cursor customizado (desktop) */
+      cursor:none;
     }
 
     /* ===== HERO ===== */
     .hero{ position:relative; height:100vh; height:100dvh; display:grid; place-items:center; }
     .hero__sticky{ position:sticky; top:0; height:100vh; height:100dvh; display:grid; place-items:center; }
-    .logoWrap{ will-change:transform,opacity; transition:transform 777ms var(--ease), opacity 333ms var(--ease); }
-    .logo{ width:min(90vw, 1200px); height:auto; display:block; }
 
-    /* Ícone fixo que aparece após o scroll */
+    /*
+      Landing layout — faithful to SVG reference (viewBox 0 0 1366 768)
+      SVG proportions:
+        - Left margin: 164/1366 = 12%
+        - "gabriel" width: 688/1366 = 50.4% of viewport
+        - "zomignani" width: 1038/1366 = 76% of viewport
+        - Icon: sits right of "gabriel", vertically centered on gabriel x-height
+        - Icon width: 177/1366 = 13% of viewport
+        - Gap between gabriel and icon: ~85/1366 = 6.2%
+        - Small text: 41.81/219 = 0.19x of large text (font ratio ~5.1:1)
+        - Info text starts ~51 units below "zomignani" baseline
+        - 3 lines: "são paulo fauusp", "design gráfico moda 2002", "zomignani@usp.br"
+        - All left-aligned at x~164
+        - Composition vertically centered with ~14.7% margins
+    */
+    .logoWrap{
+      display:flex; flex-direction:column; align-items:flex-start;
+      /* Match SVG left margin: 164/1366 ≈ 12% from left edge */
+      padding-left:12vw;
+      padding-right:12vw;
+      width:100%;
+    }
+
+    .landing-name{
+      display:flex; align-items:center;
+      font-family:"Host Grotesk", sans-serif; font-weight:700;
+      will-change:transform, opacity, filter, letter-spacing;
+      /* "gabriel" in SVG occupies ~28.5% of viewport height (219px / 768px)
+         Using vw-based sizing for horizontal fidelity: gabriel is ~50.4% wide
+         At 76vw total for zomignani, font-size needs to make gabriel ~50.4% */
+      font-size:clamp(60px, 14.2vw, 220px);
+      line-height:0.82;
+      color:var(--fg);
+      white-space:nowrap;
+    }
+    .landing-name .name-text{ display:inline-block; }
+    .landing-name .landing-icon{
+      /* Icon in SVG: 177 units wide, gabriel text: 688 units wide
+         177/688 = 0.257 of gabriel font-size
+         But icon height matches gabriel x-height (cap height ~0.72em for Host Grotesk)
+         Icon in SVG: 174 units tall. gabriel cap height: ~219 units.
+         174/219 = 0.79em
+         Gap between gabriel end and icon start: 85/688 ≈ 0.124em relative to font */
+      height:0.80em;
+      width:auto;
+      display:inline-block;
+      margin-left:0.12em;
+      /* Vertically center on x-height / cap-height of gabriel */
+      align-self:center;
+      margin-top:0.02em;
+    }
+
+    .landing-surname{
+      font-family:"Host Grotesk", sans-serif; font-weight:700;
+      will-change:transform, opacity, filter, letter-spacing;
+      /* "zomignani" in SVG: 1038 units wide, "gabriel" 688 units wide
+         zomignani is 1.509x gabriel. Same font, so same font-size.
+         The extra width comes from more characters. */
+      font-size:clamp(60px, 14.2vw, 220px);
+      line-height:0.82;
+      color:var(--fg);
+      margin:0;
+      margin-top:-0.03em;
+    }
+
+    .landing-info{
+      font-family:"Cardo", serif;
+      font-weight:400;
+      font-style:normal;
+      will-change:transform, opacity, filter;
+      /* SVG: small text is 41.81px, large text ~219px cap area
+         41.81/219 ≈ 0.19. At 14.2vw base, info ≈ 14.2*0.19 = 2.7vw */
+      font-size:clamp(12px, 2.7vw, 42px);
+      line-height:1.15;
+      color:var(--fg);
+      text-align:justify;
+      text-justify:inter-word;
+      /* SVG gap: ~51 units below zomignani baseline (520 to 571)
+         51/768 ≈ 6.6vh, but relative to font: 51/219 ≈ 0.23em of large text */
+      margin-top:0.8em;
+    }
+    .landing-info-line{ display:block; }
+    .landing-email{
+      display:block;
+      color:rgb(0,255,0);
+      font-family:"Cardo", serif;
+      font-weight:400;
+      font-style:normal;
+    }
+
+    /* Brand icon — moves from landing icon position to fixed position, behind content */
     .brandIcon{
-      position:fixed; left:20px; top:20px; width:90px; height:90px;
-      opacity:0; pointer-events:none; transition:transform 999ms var(--ease), opacity 777ms var(--ease); z-index:10;
+      position:fixed; left:0; top:0; width:90px; height:90px;
+      opacity:0; pointer-events:none; z-index:0;
+      will-change:transform, left, top, width, height;
     }
     .brandIcon img{ width:100%; height:100%; display:block; }
 
@@ -54,49 +141,60 @@
       margin:0; font-weight:600; font-size:clamp(20px, 2.4vw, 32px);
     }
     .descricao{
-      position:absolute; left:calc(50% - var(--main-w)/2); top:calc(50% + var(--main-h)/2);
-      transform:translateY(var(--text-gap)); width:var(--main-w);
-      margin:0; font-weight:500; font-size:clamp(14px, 2vw, 22px); line-height:1; text-align:left;
+      position:absolute; left:calc(50% - var(--main-w)/2); top:calc(50% + var(--main-h)/2 + var(--text-gap));
+      width:var(--main-w);
+      margin:0; font-weight:500; font-size:clamp(14px, 2vw, 22px); line-height:1.3; text-align:left;
     }
 
     .carousel{ position:absolute; inset:0; }
     .projeto{
       position:absolute; cursor:pointer; user-select:none;
-      transition:transform 600ms var(--ease), opacity 600ms var(--ease), width 600ms var(--ease), height 600ms var(--ease);
+      will-change:transform, width, height, opacity;
       margin:0;
     }
     .frame{ position: relative; width:100%; height:100%; overflow:hidden; }
 
-    /* Posições (3 blocos + fila) */
+    /* 3-panel carousel: edge-to-edge */
     .pos-centro{ width:var(--main-w); height:var(--main-h); opacity:1; z-index:3; transform:translate3d(calc(50vw - 50%), calc(50vh - 50%), 0) scale(1); }
-    .pos-esq  { width:var(--side-w); height:var(--side-h); opacity:1; z-index:2; transform:translate3d(0, calc(50vh - 50%), 0) scale(.965); }
-    .pos-dir  { width:var(--side-w); height:var(--side-h); opacity:1; z-index:2; transform:translate3d(calc(100vw - var(--side-w)), calc(50vh - 50%), 0) scale(.965); }
+    .pos-esq  { width:var(--side-w); height:var(--side-h); opacity:1; z-index:2; transform:translate3d(0, calc(50vh - 50%), 0) scale(.965); transform-origin:left center; }
+    .pos-dir  { width:var(--side-w); height:var(--side-h); opacity:1; z-index:2; transform:translate3d(calc(100vw - var(--side-w)), calc(50vh - 50%), 0) scale(.965); transform-origin:right center; }
     .pos-fila { width:var(--side-w); height:var(--side-h); opacity:0; z-index:1; transform:translate3d(120vw, calc(50vh - 50%), 0) scale(.94); }
 
-    /* Camadas para crossfade (desktop) */
     .frame > .layer{
       position:absolute; inset:0;
       background-position:center; background-repeat:no-repeat; background-size:cover;
-      opacity:1; transition:opacity 260ms var(--ease); will-change:opacity; pointer-events:none;
+      opacity:1; will-change:opacity; pointer-events:none;
     }
     .carousel .pos-esq   .frame > .layer{ background-position:right center; }
     .carousel .pos-dir   .frame > .layer{ background-position:left  center; }
     .carousel .pos-centro .frame > .layer{ background-size:contain; background-position:center; background-color:var(--bg); }
 
-    /* Acessibilidade: reduz animações */
-    @media (prefers-reduced-motion: reduce){ .logoWrap, .projeto{ transition:none !important; } }
+    @media (prefers-reduced-motion: reduce){ .landing-name, .landing-surname, .landing-info, .projeto{ transition:none !important; } }
 
     /* ===== LISTA (MOBILE) ===== */
     .listaMobile{ display:none; }
 
     @media (max-width: 768px){
+      .logoWrap{
+        padding-left:2vw;
+        padding-right:2vw;
+      }
+      .landing-name{
+        font-size:clamp(56px, 19vw, 180px);
+      }
+      .landing-surname{
+        font-size:clamp(56px, 19vw, 180px);
+      }
+      .landing-info{
+        font-size:clamp(13px, 4.5vw, 30px);
+      }
       .galeria{ height:auto; min-height:0; }
       .stage{ position:static; }
       .titulo, .descricao, .carousel{ display:none !important; }
-      .listaMobile{ display:block; width:100vw; }
+      .listaMobile{ display:block; width:100%; }
 
-      .projMobile{ width:100vw; margin: clamp(12px, 3.2vw, 22px) 0; touch-action: pan-y; }
-      .tituloMobile{ margin: 0 0 clamp(8px, 2.4vw, 12px) 0; font-weight:600; font-size: clamp(18px, 4vw, 24px); line-height:1.1; }
+      .projMobile{ width:100%; margin: clamp(12px, 3.2vw, 22px) 0; touch-action:pan-y; }
+      .tituloMobile{ margin: 0 0 clamp(8px, 2.4vw, 12px) 0; padding:0 5px; font-weight:600; font-size: clamp(18px, 4vw, 24px); line-height:1.1; }
 
       .frameMobile{ position:relative; }
       .frameMobile .mediaWrap{ position:relative; width:100%; aspect-ratio:16 / 9; overflow:hidden; background:var(--bg); }
@@ -107,8 +205,12 @@
       }
       .frameMobile .mediaWrap > img.layer.on{ opacity:1; }
 
-      .descricaoMobile{ margin: clamp(8px, 2.6vw, 14px) 0 0 0; font-weight:500; font-size: clamp(14px, 3.6vw, 18px); line-height:1.35; text-align:left; }
+      .descricaoMobile{ margin: clamp(8px, 2.6vw, 14px) 0 0 0; padding:0 5px; font-weight:500; font-size: clamp(14px, 3.6vw, 18px); line-height:1.35; text-align:left; }
     }
+
+    /* Decrypt — full opacity */
+    .decrypt-char{ display:inline; }
+    .decrypt-scrambled{ display:inline; }
   </style>
 </head>
 <body>
@@ -117,46 +219,293 @@
   <section class="hero" aria-label="Abertura">
     <div class="hero__sticky">
       <div class="logoWrap" id="logoWrap">
-        <img class="logo" src="landing page.svg" alt="Logo">
+        <div class="landing-name">
+          <span class="name-text" id="decryptGabriel">gabriel</span>
+          <img class="landing-icon" src="icone.svg" alt="" aria-hidden="true" id="landingIcon">
+        </div>
+        <div class="landing-surname" id="decryptZomignani">zomignani</div>
+        <div class="landing-info" id="landingInfo">
+          <span class="landing-info-line" id="decryptLine1">2002 são paulo fauusp</span>
+          <span class="landing-info-line" id="decryptLine2">design gráfico moda </span>
+          <span class="landing-email" id="decryptEmail">zomignani@usp.br</span>
+        </div>
       </div>
     </div>
   </section>
 
   <section class="galeria" aria-label="Galeria">
     <div class="stage">
-      <!-- DESKTOP -->
-      <h2 class="titulo" id="titulo">Título do projeto</h2>
+      <h2 class="titulo" id="titulo"></h2>
       <div class="carousel" id="carousel"></div>
-      <p class="descricao" id="descricao">Descrição longa de teste…</p>
-      <!-- MOBILE -->
+      <p class="descricao" id="descricao"></p>
       <div class="listaMobile" id="listaMobile" aria-label="Projetos (mobile)"></div>
     </div>
   </section>
 
 <script>
-/* ===== Parallax + ícone de marca ===== */
+/* ===== Ajustar largura da caixa de info + email espaçado ===== */
+function ajustarLarguraInfo(){
+  const surname = document.getElementById('decryptZomignani');
+  const info = document.getElementById('landingInfo');
+  const emailEl = document.getElementById('decryptEmail');
+  if(!surname || !info || !emailEl) return;
+
+  const w = surname.offsetWidth;
+  info.style.width = w + 'px';
+
+  // Calculate email letter-spacing to fill full width
+  emailEl.style.letterSpacing = '0px';
+  requestAnimationFrame(() => {
+    const emailNatural = emailEl.offsetWidth;
+    const emailText = emailEl.textContent || emailEl.dataset.originalText || '';
+    const charCount = emailText.length;
+    if(charCount > 1 && emailNatural < w){
+      const extra = (w - emailNatural) / (charCount - 1);
+      emailEl.style.letterSpacing = extra + 'px';
+    }
+  });
+}
+window.addEventListener('load', ajustarLarguraInfo);
+window.addEventListener('resize', ajustarLarguraInfo);
+requestAnimationFrame(()=>{ setTimeout(ajustarLarguraInfo, 100); });
+
+/* ===== DecryptedText — starts encrypted, then decrypts ===== */
+function scrambleImmediate(el, characters){
+  const text = el.textContent;
+  el.dataset.originalText = text;
+  el.innerHTML = '';
+  const chars = text.split('');
+  const spans = [];
+  chars.forEach((ch) => {
+    const span = document.createElement('span');
+    if(ch === ' '){
+      span.textContent = ' ';
+      el.appendChild(span);
+      spans.push({ span, original: ch, revealed: true });
+    } else {
+      span.className = 'decrypt-scrambled';
+      span.textContent = characters[Math.floor(Math.random() * characters.length)];
+      el.appendChild(span);
+      spans.push({ span, original: ch, revealed: false });
+    }
+  });
+  return spans;
+}
+
+function decryptFromScrambled(spans, opts = {}){
+  const speed = opts.speed || 50;
+  const characters = opts.characters || 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@#$%^&*';
+  let revealIndex = 0;
+
+  const interval = setInterval(() => {
+    while(revealIndex < spans.length && spans[revealIndex].revealed) revealIndex++;
+    if(revealIndex < spans.length){
+      spans[revealIndex].revealed = true;
+      spans[revealIndex].span.className = 'decrypt-char';
+      spans[revealIndex].span.textContent = spans[revealIndex].original;
+      revealIndex++;
+    }
+    spans.forEach((s) => {
+      if(!s.revealed) s.span.textContent = characters[Math.floor(Math.random() * characters.length)];
+    });
+    if(revealIndex >= spans.length){
+      clearInterval(interval);
+      spans.forEach(s => { s.span.className = 'decrypt-char'; s.span.textContent = s.original; });
+      ajustarLarguraInfo();
+    }
+  }, speed);
+}
+
+// Immediately scramble on load
+const dChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@#$%^&*';
+const spanSets = {};
+['decryptGabriel','decryptZomignani','decryptLine1','decryptLine2','decryptEmail'].forEach(id => {
+  const el = document.getElementById(id);
+  if(el) spanSets[id] = scrambleImmediate(el, dChars);
+});
+
+// Keep scrambling until decrypt starts
+const scrambleLoop = setInterval(() => {
+  Object.values(spanSets).forEach(spans => {
+    spans.forEach(s => {
+      if(!s.revealed) s.span.textContent = dChars[Math.floor(Math.random() * dChars.length)];
+    });
+  });
+}, 50);
+
+// Start decrypt after 500ms
+setTimeout(() => {
+  clearInterval(scrambleLoop);
+  const order = [
+    { id: 'decryptGabriel', speed: 55 },
+    { id: 'decryptZomignani', speed: 45 },
+    { id: 'decryptLine1', speed: 35 },
+    { id: 'decryptLine2', speed: 35 },
+    { id: 'decryptEmail', speed: 40 },
+  ];
+  order.forEach((item, i) => {
+    setTimeout(() => {
+      if(spanSets[item.id]) decryptFromScrambled(spanSets[item.id], { speed: item.speed, characters: dChars });
+    }, i * 200);
+  });
+}, 500);
+
+/* ===== Scroll Reveal + Morph (single icon, responsive) ===== */
 const logoWrap = document.getElementById('logoWrap');
 const brandIcon = document.getElementById('brandIcon');
-const easeInOutCubic = t => (t<0.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2);
+const landingIcon = document.getElementById('landingIcon');
 const clamp01 = n => Math.max(0, Math.min(1, n));
 const lerp = (a,b,t) => a + (b-a) * t;
-let ticking=false;
+let ticking = false;
+const easeSmooth = t => t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
+function getIsMobile(){ return window.innerWidth <= 768; }
+
+/* Scroll direction tracking for reverse drift on scroll-up */
+let prevScrollY = 0;
+let driftSign = -1; // -1 = drift up (scroll down), +1 = drift from below (scroll up)
+
+/* Cache source position — update on resize */
+let cachedSrc = null;
+function updateSourcePosition(){
+  if(window.scrollY < 5){
+    const r = landingIcon.getBoundingClientRect();
+    cachedSrc = { x: r.left, y: r.top, w: r.width, h: r.height };
+  }
+}
+updateSourcePosition();
+
+function getTargetPosition(){
+  const isMobile = getIsMobile();
+  const targetSize = isMobile ? 50 : 90;
+  // Desktop: centered at top. Mobile: left side
+  const targetX = isMobile ? 16 : (window.innerWidth / 2 - targetSize / 2);
+  const targetY = isMobile ? 16 : 24;
+  return { x: targetX, y: targetY, size: targetSize };
+}
+
 function onScroll(){
   if(!ticking){
     requestAnimationFrame(()=>{
       const vh = window.innerHeight || 1;
-      const pRaw = clamp01(window.scrollY / vh);
-      const p = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : easeInOutCubic(pRaw);
-      const ty = lerp(0, 500, p), sc = lerp(1, 0, p), op = lerp(1, 0, p);
-      logoWrap.style.transform = `translateY(${ty}px) scale(${sc})`;
-      logoWrap.style.opacity = op;
-      brandIcon.style.opacity = String(p);
-      ticking=false;
+      const scrollY = window.scrollY;
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // Detect scroll direction: snap to -1 on scroll-down (preserve original), smooth to +1 on scroll-up
+      if(scrollY > prevScrollY + 0.5){
+        driftSign = -1;
+      } else if(scrollY < prevScrollY - 0.5){
+        driftSign += (1 - driftSign) * 0.15;
+      }
+      prevScrollY = scrollY;
+
+      // --- Text effect: staggered drift + blur + fade ---
+      // Much longer scroll range so text lingers
+      const textRange = vh * 3.2;
+      const tRaw = clamp01(scrollY / textRange);
+
+      // Scroll-following: all elements drift down with scroll (parallax)
+      const scrollFollow = scrollY * 0.25;
+
+      // Each element has its own staggered progress
+      const nameEl = document.querySelector('.landing-name');
+      const surnameEl = document.querySelector('.landing-surname');
+      const infoEl = document.getElementById('landingInfo');
+
+      if(!reducedMotion){
+        // Staggered progress: initial delay preserved, tighter inter-element gap, faster animation
+        const pName = clamp01((tRaw - 0.10) / 0.15);
+        const pSurname = clamp01((tRaw - 0.13) / 0.15);
+        const pInfo = clamp01((tRaw - 0.16) / 0.15);
+
+        // Easing for each
+        const eName = easeSmooth(pName);
+        const eSurname = easeSmooth(pSurname);
+        const eInfo = easeSmooth(pInfo);
+
+        // gabriel: drift direction follows driftSign (up on scroll-down, from-below on scroll-up)
+        const nameTy = lerp(0, vh * 0.35 * driftSign, eName) + scrollFollow;
+        const nameBlur = lerp(0, 12, eName);
+        const nameSpacing = lerp(0, 0.08, eName);
+        const nameOp = clamp01(1 - eName * 1.3);
+        nameEl.style.transform = `translate3d(0, ${nameTy}px, 0)`;
+        nameEl.style.filter = nameBlur > 0.5 ? `blur(${nameBlur}px)` : 'none';
+        nameEl.style.opacity = nameOp;
+        nameEl.style.letterSpacing = nameSpacing + 'em';
+
+        // zomignani: drift direction follows driftSign
+        const surTy = lerp(0, vh * 0.30 * driftSign, eSurname) + scrollFollow;
+        const surBlur = lerp(0, 14, eSurname);
+        const surSpacing = lerp(0, 0.06, eSurname);
+        const surOp = clamp01(1 - eSurname * 1.3);
+        surnameEl.style.transform = `translate3d(0, ${surTy}px, 0)`;
+        surnameEl.style.filter = surBlur > 0.5 ? `blur(${surBlur}px)` : 'none';
+        surnameEl.style.opacity = surOp;
+        surnameEl.style.letterSpacing = surSpacing + 'em';
+
+        // info: drift direction follows driftSign
+        const infoTy = lerp(0, vh * 0.22 * driftSign, eInfo) + scrollFollow;
+        const infoBlur = lerp(0, 8, eInfo);
+        const infoOp = clamp01(1 - eInfo * 1.4);
+        infoEl.style.transform = `translate3d(0, ${infoTy}px, 0)`;
+        infoEl.style.filter = infoBlur > 0.5 ? `blur(${infoBlur}px)` : 'none';
+        infoEl.style.opacity = infoOp;
+      } else {
+        const gone = tRaw > 0.5;
+        nameEl.style.opacity = gone ? '0' : '1';
+        surnameEl.style.opacity = gone ? '0' : '1';
+        infoEl.style.opacity = gone ? '0' : '1';
+        nameEl.style.transform = 'none';
+        surnameEl.style.transform = 'none';
+        infoEl.style.transform = 'none';
+        nameEl.style.filter = 'none';
+        surnameEl.style.filter = 'none';
+        infoEl.style.filter = 'none';
+      }
+
+      // --- Icon morph (unchanged) ---
+      const iconRaw = clamp01(scrollY / (vh * 0.7));
+      const target = getTargetPosition();
+
+      let src;
+      if(iconRaw < 0.02){
+        const r = landingIcon.getBoundingClientRect();
+        cachedSrc = { x: r.left, y: r.top, w: r.width, h: r.height };
+        src = cachedSrc;
+      } else {
+        src = cachedSrc || { x: window.innerWidth/2, y: window.innerHeight/2, w: target.size, h: target.size };
+      }
+
+      if(iconRaw > 0.01){
+        landingIcon.style.opacity = '0';
+        brandIcon.style.opacity = '1';
+      } else {
+        landingIcon.style.opacity = '1';
+        brandIcon.style.opacity = '0';
+      }
+
+      const mp = easeSmooth(iconRaw);
+      const curSize = lerp(src.w || target.size, target.size, mp);
+      brandIcon.style.left = lerp(src.x, target.x, mp) + 'px';
+      brandIcon.style.top = lerp(src.y, target.y, mp) + 'px';
+      brandIcon.style.width = curSize + 'px';
+      brandIcon.style.height = curSize + 'px';
+
+      ticking = false;
     });
-    ticking=true;
+    ticking = true;
   }
 }
 window.addEventListener('scroll', onScroll, {passive:true});
+
+// Responsive: update positions on resize — force immediate recalc
+window.addEventListener('resize', () => {
+  updateSourcePosition();
+  // Force recalc even when scrolled: update target position immediately
+  ticking = false;
+  onScroll();
+});
+
+requestAnimationFrame(onScroll);
 
 /* ===== Dados dos projetos ===== */
 const projetos=[
@@ -175,45 +524,71 @@ const projetos=[
   ],frame:0}
 ];
 
-/* ===== GALERIA (DESKTOP) ===== */
-const elCarousel=document.getElementById('carousel');
-const elTitulo=document.getElementById('titulo');
-const elDescricao=document.getElementById('descricao');
-let centro=0,autoInterval=null,restartTimeout=null;
+/* ===== GALERIA DESKTOP — 3-panel carousel with smooth transitions ===== */
+const elCarousel = document.getElementById('carousel');
+const elTitulo = document.getElementById('titulo');
+const elDescricao = document.getElementById('descricao');
+let centro = 0, autoInterval = null, restartTimeout = null;
+let isAnimating = false;
+
+/* Precompute natural aspect ratios for smooth size transitions */
+const naturalRatios = {};
+function preloadRatio(src){
+  if(naturalRatios[src] !== undefined || /^#/.test(src)) return;
+  naturalRatios[src] = null; // mark as loading
+  const img = new Image();
+  img.src = encodeURI(src);
+  const done = () => {
+    if(img.naturalWidth && img.naturalHeight){
+      naturalRatios[src] = img.naturalWidth / img.naturalHeight;
+    }
+  };
+  if(img.decode) img.decode().then(done).catch(done);
+  else { img.onload = done; img.onerror = done; }
+}
+// Preload all first frames
+projetos.forEach(p => p.frames.forEach(f => preloadRatio(f)));
 
 function criarProjetoDesktop(i){
-  const el=document.createElement('article');
-  el.className='projeto pos-fila'; el.dataset.index=i;
+  const el = document.createElement('article');
+  el.className = 'projeto pos-fila'; el.dataset.index = i;
 
-  const frame=document.createElement('div'); frame.className='frame';
+  const frame = document.createElement('div'); frame.className = 'frame';
   aplicarValorEmFrameDesktop(frame, projetos[i].frames[0]);
   el.appendChild(frame);
 
-  // Clique: centro troca imagem; lateral vem para o centro
-  el.addEventListener('click',()=>{
-    if(+el.dataset.index===centro){
-      avancarFrame(i);
+  el.addEventListener('click', (e) => {
+    if(isAnimating) return;
+    if(+el.dataset.index === centro){
+      // Click left/right half of center panel to go prev/next frame
+      const cr = el.getBoundingClientRect();
+      const cx = e.clientX - cr.left;
+      if(cx >= cr.width / 2){
+        avancarFrame(i);
+      } else {
+        voltarFrame(i);
+      }
       aplicarValorEmFrameDesktop(frame, projetos[i].frames[projetos[i].frame]);
-    }else{
+    } else {
       trazerParaCentro(i);
     }
     resetAutoCountdown();
   });
 
-  // Acessível
-  el.tabIndex=0;
+  el.tabIndex = 0;
   el.setAttribute('role','button');
   el.setAttribute('aria-label', `Abrir ${projetos[i].titulo}`);
-  el.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); el.click(); } });
+  el.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); el.click(); } });
   return el;
 }
 
 function aplicarValorEmFrameDesktop(frameEl, value){
-  if (frameEl.dataset.current === value) return;
+  if(frameEl.dataset.current === value) return;
   frameEl.dataset.current = value;
   const next = document.createElement('div');
   next.className = 'layer';
-  if (/^#/.test(value)) next.style.background = value; else next.style.backgroundImage = `url("${encodeURI(value)}")`;
+  if(/^#/.test(value)) next.style.background = value;
+  else next.style.backgroundImage = `url("${encodeURI(value)}")`;
   next.style.opacity = '0';
   frameEl.appendChild(next);
 
@@ -221,48 +596,97 @@ function aplicarValorEmFrameDesktop(frameEl, value){
   const prev = layers.length > 1 ? layers[0] : null;
 
   const maybeFade = () => {
-    requestAnimationFrame(()=>{
+    requestAnimationFrame(() => {
+      next.style.transition = 'opacity 400ms cubic-bezier(.4,0,.2,1)';
       next.style.opacity = '1';
-      if (prev){ prev.style.opacity='0'; prev.addEventListener('transitionend', () => prev.remove(), { once:true }); }
+      if(prev){
+        prev.style.transition = 'opacity 400ms cubic-bezier(.4,0,.2,1)';
+        prev.style.opacity = '0';
+        prev.addEventListener('transitionend', () => prev.remove(), {once:true});
+      }
     });
   };
 
-  if (/^#/.test(value)) { maybeFade(); return; }
+  if(/^#/.test(value)){ maybeFade(); return; }
   const img = new Image();
   img.src = next.style.backgroundImage.slice(5, -2);
-  if (img.decode) img.decode().then(maybeFade).catch(maybeFade);
-  else if (img.complete) maybeFade();
+  if(img.decode) img.decode().then(maybeFade).catch(maybeFade);
+  else if(img.complete) maybeFade();
   else { img.onload = maybeFade; img.onerror = maybeFade; }
 
   const all = frameEl.querySelectorAll('.layer');
-  for (let i = 0; i < all.length - 2; i++) all[i].remove();
+  for(let j = 0; j < all.length - 2; j++) all[j].remove();
 }
 
-projetos.forEach((_,i)=>elCarousel.appendChild(criarProjetoDesktop(i)));
+projetos.forEach((_, i) => elCarousel.appendChild(criarProjetoDesktop(i)));
 
-function aplicarPosicoes(){
-  const n=projetos.length, esq=(centro-1+n)%n, dir=(centro+1)%n;
-  [...elCarousel.children].forEach(el=>{
-    const i=+el.dataset.index;
+/* Smooth carousel transitions via JS for better control */
+const TRANSITION_DURATION = 850; // ms
+const TRANSITION_EASING = 'cubic-bezier(.4, 0, .12, 1)';
+
+function setTransitions(el, enable){
+  if(enable){
+    el.style.transition = [
+      `transform ${TRANSITION_DURATION}ms ${TRANSITION_EASING}`,
+      `width ${TRANSITION_DURATION}ms ${TRANSITION_EASING}`,
+      `height ${TRANSITION_DURATION}ms ${TRANSITION_EASING}`,
+      `opacity 500ms cubic-bezier(.4,0,.2,1)`
+    ].join(', ');
+  } else {
+    el.style.transition = 'none';
+  }
+}
+
+function aplicarPosicoes(animate){
+  const n = projetos.length, esq = (centro-1+n)%n, dir = (centro+1)%n;
+  const children = [...elCarousel.children];
+
+  if(animate) isAnimating = true;
+
+  children.forEach(el => {
+    const i = +el.dataset.index;
     el.classList.remove('pos-esq','pos-centro','pos-dir','pos-fila');
-    if(i===centro) el.classList.add('pos-centro');
-    else if(i===esq) el.classList.add('pos-esq');
-    else if(i===dir) el.classList.add('pos-dir');
-    else el.classList.add('pos-fila');
+
+    setTransitions(el, animate);
+
+    if(i === centro) el.classList.add('pos-centro');
+    else if(i === esq) el.classList.add('pos-esq');
+    else if(i === dir) el.classList.add('pos-dir');
+    else {
+      // Items going to queue: if they were visible, animate out; if not, just place
+      el.classList.add('pos-fila');
+    }
   });
-  elTitulo.textContent=projetos[centro].titulo;
-  elDescricao.textContent=projetos[centro].descricao;
+
+  // Update text
+  elTitulo.textContent = projetos[centro].titulo;
+  elDescricao.textContent = projetos[centro].descricao;
+
+  if(animate){
+    setTimeout(() => { isAnimating = false; }, TRANSITION_DURATION);
+  }
 }
 
-aplicarPosicoes();
-function passo(){ centro=(centro+1+projetos.length)%projetos.length; aplicarPosicoes(); }
-function startAuto(){ stopAuto(); autoInterval=setInterval(passo,10000); }
-function stopAuto(){ if(autoInterval){ clearInterval(autoInterval); autoInterval=null; } }
-function resetAutoCountdown(){ stopAuto(); if(restartTimeout) clearTimeout(restartTimeout); restartTimeout=setTimeout(startAuto,15000); }
+aplicarPosicoes(false);
+
+function passo(){
+  if(isAnimating) return;
+  centro = (centro+1) % projetos.length;
+  aplicarPosicoes(true);
+}
+function startAuto(){ stopAuto(); autoInterval = setInterval(passo, 10000); }
+function stopAuto(){ if(autoInterval){ clearInterval(autoInterval); autoInterval = null; } }
+function resetAutoCountdown(){ stopAuto(); if(restartTimeout) clearTimeout(restartTimeout); restartTimeout = setTimeout(startAuto, 15000); }
 startAuto();
-function trazerParaCentro(idx){ centro=idx; aplicarPosicoes(); }
-function avancarFrame(i){ projetos[i].frame=(projetos[i].frame+1)%projetos[i].frames.length; }
-function voltarFrame(i){ projetos[i].frame=(projetos[i].frame-1+projetos[i].frames.length)%projetos[i].frames.length; }
+
+function trazerParaCentro(idx){
+  if(isAnimating) return;
+  centro = idx;
+  aplicarPosicoes(true);
+}
+function avancarFrame(i){ projetos[i].frame = (projetos[i].frame+1) % projetos[i].frames.length; }
+function voltarFrame(i){ projetos[i].frame = (projetos[i].frame-1+projetos[i].frames.length) % projetos[i].frames.length; }
+
 
 /* ===== LISTA (MOBILE) ===== */
 const elListaMobile = document.getElementById('listaMobile');
@@ -272,7 +696,7 @@ let modoAtual = mediaMobile.matches ? 'mobile' : 'desktop';
 
 function construirListaMobile(){
   elListaMobile.innerHTML = ''; mobileEls = [];
-  projetos.forEach((proj, i)=>{
+  projetos.forEach((proj, i) => {
     const art = document.createElement('article');
     art.className = 'projMobile'; art.dataset.index = i;
 
@@ -280,17 +704,17 @@ function construirListaMobile(){
 
     const frame = document.createElement('div'); frame.className = 'frameMobile';
     const wrap = document.createElement('div'); wrap.className = 'mediaWrap'; wrap.style.aspectRatio = '16 / 9';
-    const imgA = document.createElement('img'); imgA.className = 'layer on'; imgA.alt = proj.titulo || ''; imgA.decoding='async';
-    const imgB = document.createElement('img'); imgB.className = 'layer';   imgB.alt = proj.titulo || ''; imgB.decoding='async';
+    const imgA = document.createElement('img'); imgA.className = 'layer on'; imgA.alt = proj.titulo || ''; imgA.decoding = 'async';
+    const imgB = document.createElement('img'); imgB.className = 'layer';   imgB.alt = proj.titulo || ''; imgB.decoding = 'async';
     wrap.appendChild(imgA); wrap.appendChild(imgB); frame.appendChild(wrap); art.appendChild(frame);
 
     const desc = document.createElement('p'); desc.className = 'descricaoMobile'; desc.textContent = proj.descricao; art.appendChild(desc);
 
     elListaMobile.appendChild(art);
-    mobileEls[i] = { wrap, on: imgA, off: imgB, ar: '16 / 9', busy:false };
-    atualizarFrameMobile(i);   // primeiro frame
-    prefetchVizinhos(i);       // pré-carrega prox/ant
-    anexarSwipe(art, i);       // swipe horizontal otimizado
+    mobileEls[i] = { wrap, on: imgA, off: imgB, ar: '16 / 9', busy: false };
+    atualizarFrameMobile(i);
+    prefetchVizinhos(i);
+    anexarTap(art, i);
   });
 }
 
@@ -298,7 +722,6 @@ function atualizarFrameMobile(i){
   const m = mobileEls[i]; if(!m || m.busy) return;
   const valor = projetos[i].frames[projetos[i].frame];
 
-  // cores sólidas (se usar)
   if(/^#/.test(valor)){
     m.busy = true;
     m.wrap.style.background = valor;
@@ -310,131 +733,94 @@ function atualizarFrameMobile(i){
 
   m.wrap.style.background = 'transparent';
   const nextUrl = encodeURI(valor);
-  if (m.wrap.dataset.current === nextUrl) { prefetchVizinhos(i); return; }
+  if(m.wrap.dataset.current === nextUrl){ prefetchVizinhos(i); return; }
 
   m.busy = true;
-
-  // Pré-carrega num Image fora do DOM p/ já ter dimensões e pixels
-  const tmp = new Image();
-  tmp.decoding = 'async';
-  tmp.src = nextUrl;
+  const tmp = new Image(); tmp.decoding = 'async'; tmp.src = nextUrl;
 
   const show = () => {
-    // Ajusta a proporção a cada imagem (comportamento original)
-    if (tmp.naturalWidth && tmp.naturalHeight){
+    if(tmp.naturalWidth && tmp.naturalHeight){
       const ratio = `${tmp.naturalWidth} / ${tmp.naturalHeight}`;
       m.wrap.style.aspectRatio = ratio; m.ar = ratio;
     } else {
       m.wrap.style.aspectRatio = m.ar || '16 / 9';
     }
-
     m.off.src = nextUrl;
-
-    requestAnimationFrame(()=>{
+    requestAnimationFrame(() => {
       m.off.classList.add('on');
       m.on.classList.remove('on');
-
-      // swap refs
       const prevOn = m.on; m.on = m.off; m.off = prevOn;
       m.wrap.dataset.current = nextUrl;
-
-      // pré-carrega vizinhos do novo frame
       prefetchVizinhos(i);
-
-      // liberação rápida (evita duplo avanço)
-      setTimeout(()=>{ m.busy = false; }, 170);
+      setTimeout(() => { m.busy = false; }, 170);
     });
   };
 
-  if (tmp.decode) tmp.decode().then(show).catch(show);
-  else if (tmp.complete) show();
+  if(tmp.decode) tmp.decode().then(show).catch(show);
+  else if(tmp.complete) show();
   else { tmp.onload = show; tmp.onerror = show; }
 }
 
-/* Pré-carrega anterior e próximo do projeto atual */
 function prefetchVizinhos(i){
-  const frames = projetos[i].frames;
-  const cur = projetos[i].frame;
-  const n = frames.length;
-  const cand = [frames[(cur+1)%n], frames[(cur-1+n)%n]];
-  cand.forEach(u=>{
+  const frames = projetos[i].frames, cur = projetos[i].frame, n = frames.length;
+  [frames[(cur+1)%n], frames[(cur-1+n)%n]].forEach(u => {
     if(!u || /^#/.test(u)) return;
-    const img = new Image();
-    img.decoding='async';
-    img.src = encodeURI(u);
+    const img = new Image(); img.decoding = 'async'; img.src = encodeURI(u);
   });
 }
 
-/* >>> Swipe horizontal rápido e estável (mobile) <<< */
-function anexarSwipe(el, index){
-  let sx=0, sy=0, dx=0, dy=0, ativo=false, startT=0;
-  const THRESH = 24;          // menor limiar = resposta mais rápida
-  const ANGLE_GUARD = 1.15;   // exige mais horizontal que vertical
-  const MAX_TIME = 700;       // tempo máximo do gesto
-
-  el.addEventListener('touchstart', (e)=>{
-    const t=e.changedTouches[0];
-    sx=t.clientX; sy=t.clientY; dx=dy=0; ativo=true; startT=performance.now();
+function anexarTap(el, index){
+  let sx = 0, sy = 0, startT = 0;
+  el.addEventListener('touchstart', e => {
+    const t = e.changedTouches[0]; sx = t.clientX; sy = t.clientY; startT = performance.now();
   }, {passive:true});
-
-  el.addEventListener('touchmove', (e)=>{
-    if(!ativo) return;
-    const t=e.changedTouches[0];
-    dx=t.clientX-sx; dy=t.clientY-sy;
-
-    // Se identificar gesto horizontal, bloqueia scroll p/ zerar delay
-    if (Math.abs(dx) > THRESH && Math.abs(dx) > ANGLE_GUARD*Math.abs(dy)) {
-      e.preventDefault(); // precisa {passive:false}
-    }
-  }, {passive:false});
-
-  el.addEventListener('touchend', ()=>{
-    if(!ativo) return; ativo=false;
+  el.addEventListener('touchend', e => {
+    const t = e.changedTouches[0];
+    const dx = Math.abs(t.clientX - sx), dy = Math.abs(t.clientY - sy);
     const dt = performance.now() - startT;
     const m = mobileEls[index];
-    if (!m || m.busy) return;
-
-    if (Math.abs(dx) > THRESH && Math.abs(dx) > ANGLE_GUARD*Math.abs(dy) && dt < MAX_TIME){
-      if (dx < 0){ avancarFrame(index); } else { voltarFrame(index); }
+    if(!m || m.busy) return;
+    if(dx < 10 && dy < 10 && dt < 300){
+      if(t.clientX >= window.innerWidth / 2) avancarFrame(index);
+      else voltarFrame(index);
       atualizarFrameMobile(index);
     }
   }, {passive:true});
-
-  el.addEventListener('touchcancel', ()=>{ ativo=false; }, {passive:true});
 }
 
 function entrarMobile(){ stopAuto(); construirListaMobile(); }
 function entrarDesktop(){ startAuto(); }
-if(modoAtual === 'mobile'){ entrarMobile(); } else { entrarDesktop(); }
-mediaMobile.addEventListener('change', (e)=>{
+if(modoAtual === 'mobile') entrarMobile(); else entrarDesktop();
+mediaMobile.addEventListener('change', e => {
   const novo = e.matches ? 'mobile' : 'desktop';
-  if(novo===modoAtual) return;
-  modoAtual=novo;
-  if(novo==='mobile'){ entrarMobile(); } else { entrarDesktop(); }
+  if(novo === modoAtual) return;
+  modoAtual = novo;
+  if(novo === 'mobile') entrarMobile(); else entrarDesktop();
 });
 </script>
 
 <!-- Cursor custom (desktop) -->
 <script>
 (() => {
-  if (!matchMedia('(pointer: fine)').matches) return;
+  if(!matchMedia('(pointer: fine)').matches) return;
   const style = document.createElement('style');
   style.textContent = `
     .cursor-disc{ position:fixed; left:0; top:0; width:62px; height:62px; background:#fff; border-radius:0%; pointer-events:none; mix-blend-mode:difference; transform:translate(-50%,-50%); z-index:2147483647; opacity:0; transition: width .12s ease-out, height .12s ease-out, opacity .18s ease-out, transform .12s ease-out, background-color .12s ease-out, mix-blend-mode .12s ease-out; }
     .cursor-disc.is-visible{ opacity:1; }
     .cursor-disc.is-down{ transform:translate(-50%,-50%) scale(.9); }
-    .cursor-disc.is-hot{ background: rgb#fff; border-radius: 50%; mix-blend-mode: difference; }
+    .cursor-disc.is-hot{ background:#fff; border-radius:50%; mix-blend-mode:difference; }
     html, body, :where(a, button, input, select, textarea, label, summary,[role="button"],[role="link"],.clickable,[onclick],[tabindex]){ cursor:none !important; }
   `;
   (document.head || document.documentElement).appendChild(style);
   const disc = document.createElement('div'); disc.className = 'cursor-disc'; disc.setAttribute('aria-hidden','true'); document.body.appendChild(disc);
-  const clickableSelector = 'a,button,input,select,textarea,summary,label,[role="button"],[role="link"],.clickable';
-  const isClickable = el => !!(el && (el.closest(clickableSelector) || getComputedStyle(el).cursor === 'pointer' || el.onclick || el.getAttribute('onclick')));
-  let x=0, y=0, raf=null; const draw=()=>{ disc.style.left = x + 'px'; disc.style.top = y + 'px'; raf=null; };
+  const sel = 'a,button,input,select,textarea,summary,label,[role="button"],[role="link"],.clickable';
+  const isClickable = el => !!(el && (el.closest(sel) || getComputedStyle(el).cursor === 'pointer' || el.onclick || el.getAttribute('onclick')));
+  let x=0, y=0, raf=null;
+  const draw = () => { disc.style.left = x+'px'; disc.style.top = y+'px'; raf = null; };
   addEventListener('mousemove', e => { x=e.clientX; y=e.clientY; disc.classList.add('is-visible'); disc.classList.toggle('is-hot', isClickable(e.target)); if(!raf) raf=requestAnimationFrame(draw); }, {passive:true});
   addEventListener('mouseleave', () => disc.classList.remove('is-visible'), {passive:true});
   addEventListener('mousedown', () => disc.classList.add('is-down'), {passive:true});
-  addEventListener('mouseup',   () => disc.classList.remove('is-down'), {passive:true});
+  addEventListener('mouseup', () => disc.classList.remove('is-down'), {passive:true});
 })();
 </script>
 </body>
