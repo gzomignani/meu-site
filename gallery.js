@@ -1,31 +1,179 @@
-/* Shared project state; images decode before replacing the visible frame. */
+/* Original desktop carousel; mobile presentation preserved with inline pinch zoom. */
 (() => {
   const mobile = matchMedia('(max-width:768px)');
-  const stage = document.querySelector('.stage');
-  const carousel = document.getElementById('carousel');
-  const title = document.getElementById('titulo');
-  const description = document.getElementById('descricao');
   const list = document.getElementById('listaMobile');
-  const nav = document.createElement('nav');
-  nav.className = 'project-nav'; nav.setAttribute('aria-label', 'Escolher projeto');
-  stage.prepend(nav);
-  const footer = document.createElement('div'); footer.className = 'gallery-footer';
-  carousel.after(footer); footer.append(description);
-  const status = document.createElement('p'); status.className = 'gallery-status';
-  status.setAttribute('role', 'status'); footer.after(status);
-  carousel.setAttribute('role', 'region'); carousel.setAttribute('aria-label', 'Imagens do projeto');
-  carousel.tabIndex = 0;
-  let selected = 0, desktopRequest = 0;
   const mobileViews = new Map();
+  const imageCache = new Map();
   const mobileObserver = 'IntersectionObserver' in window ? new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
-        const index = Number(entry.target.dataset.index);
-        showMobile(index); mobileObserver.unobserve(entry.target);
+        showMobile(Number(entry.target.dataset.index)); mobileObserver.unobserve(entry.target);
       }
     });
   }, {rootMargin:'500px 0px'}) : null;
-  const imageCache = new Map();
+/* ===== GALERIA DESKTOP — 3-panel carousel with smooth transitions ===== */
+const elCarousel = document.getElementById('carousel');
+const elTitulo = document.getElementById('titulo');
+const elDescricao = document.getElementById('descricao');
+let centro = 0, autoInterval = null, restartTimeout = null;
+let isAnimating = false;
+
+/* Precompute natural aspect ratios for smooth size transitions */
+const naturalRatios = {};
+function preloadRatio(src){
+  if(naturalRatios[src] !== undefined || /^#/.test(src)) return;
+  naturalRatios[src] = null; // mark as loading
+  const img = new Image();
+  img.src = encodeURI(src);
+  const done = () => {
+    if(img.naturalWidth && img.naturalHeight){
+      naturalRatios[src] = img.naturalWidth / img.naturalHeight;
+    }
+  };
+  if(img.decode) img.decode().then(done).catch(done);
+  else { img.onload = done; img.onerror = done; }
+}
+// Preload all first frames
+projetos.forEach(p => preloadRatio(p.frames[0]));
+
+function criarProjetoDesktop(i){
+  const el = document.createElement('article');
+  el.className = 'projeto pos-fila'; el.dataset.index = i;
+
+  const frame = document.createElement('div'); frame.className = 'frame';
+  aplicarValorEmFrameDesktop(frame, projetos[i].frames[0]);
+  el.appendChild(frame);
+
+  el.addEventListener('click', (e) => {
+    if(isAnimating) return;
+    if(+el.dataset.index === centro){
+      // Click left/right half of center panel to go prev/next frame
+      const cr = el.getBoundingClientRect();
+      const cx = e.clientX - cr.left;
+      if(cx >= cr.width / 2){
+        avancarFrame(i);
+      } else {
+        voltarFrame(i);
+      }
+      aplicarValorEmFrameDesktop(frame, projetos[i].frames[projetos[i].frame]);
+    } else {
+      trazerParaCentro(i);
+    }
+    resetAutoCountdown();
+  });
+
+  el.tabIndex = 0;
+  el.setAttribute('role','button');
+  el.setAttribute('aria-label', `Abrir ${projetos[i].titulo}`);
+  el.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); el.click(); } });
+  return el;
+}
+
+function aplicarValorEmFrameDesktop(frameEl, value){
+  if(frameEl.dataset.current === value) return;
+  frameEl.dataset.current = value;
+  const next = document.createElement('div');
+  next.className = 'layer';
+  if(/^#/.test(value)) next.style.background = value;
+  else next.style.backgroundImage = `url("${encodeURI(value)}")`;
+  next.style.opacity = '0';
+  frameEl.appendChild(next);
+
+  const layers = frameEl.querySelectorAll('.layer');
+  const prev = layers.length > 1 ? layers[0] : null;
+
+  const maybeFade = () => {
+    requestAnimationFrame(() => {
+      next.style.transition = 'opacity 400ms cubic-bezier(.4,0,.2,1)';
+      next.style.opacity = '1';
+      if(prev){
+        prev.style.transition = 'opacity 400ms cubic-bezier(.4,0,.2,1)';
+        prev.style.opacity = '0';
+        prev.addEventListener('transitionend', () => prev.remove(), {once:true});
+      }
+    });
+  };
+
+  if(/^#/.test(value)){ maybeFade(); return; }
+  const img = new Image();
+  img.src = next.style.backgroundImage.slice(5, -2);
+  if(img.decode) img.decode().then(maybeFade).catch(maybeFade);
+  else if(img.complete) maybeFade();
+  else { img.onload = maybeFade; img.onerror = maybeFade; }
+
+  const all = frameEl.querySelectorAll('.layer');
+  for(let j = 0; j < all.length - 2; j++) all[j].remove();
+}
+
+projetos.forEach((_, i) => elCarousel.appendChild(criarProjetoDesktop(i)));
+
+/* Smooth carousel transitions via JS for better control */
+const TRANSITION_DURATION = 850; // ms
+const TRANSITION_EASING = 'cubic-bezier(.4, 0, .12, 1)';
+
+function setTransitions(el, enable){
+  if(enable){
+    el.style.transition = [
+      `transform ${TRANSITION_DURATION}ms ${TRANSITION_EASING}`,
+      `width ${TRANSITION_DURATION}ms ${TRANSITION_EASING}`,
+      `height ${TRANSITION_DURATION}ms ${TRANSITION_EASING}`,
+      `opacity 500ms cubic-bezier(.4,0,.2,1)`
+    ].join(', ');
+  } else {
+    el.style.transition = 'none';
+  }
+}
+
+function aplicarPosicoes(animate){
+  const n = projetos.length, esq = (centro-1+n)%n, dir = (centro+1)%n;
+  const children = [...elCarousel.children];
+
+  if(animate) isAnimating = true;
+
+  children.forEach(el => {
+    const i = +el.dataset.index;
+    el.classList.remove('pos-esq','pos-centro','pos-dir','pos-fila');
+
+    setTransitions(el, animate);
+
+    if(i === centro) el.classList.add('pos-centro');
+    else if(i === esq) el.classList.add('pos-esq');
+    else if(i === dir) el.classList.add('pos-dir');
+    else {
+      // Items going to queue: if they were visible, animate out; if not, just place
+      el.classList.add('pos-fila');
+    }
+  });
+
+  // Update text
+  elTitulo.textContent = projetos[centro].titulo;
+  elDescricao.textContent = projetos[centro].descricao;
+
+  if(animate){
+    setTimeout(() => { isAnimating = false; }, TRANSITION_DURATION);
+  }
+}
+
+aplicarPosicoes(false);
+
+function passo(){
+  if(isAnimating) return;
+  centro = (centro+1) % projetos.length;
+  aplicarPosicoes(true);
+}
+function startAuto(){ stopAuto(); autoInterval = setInterval(passo, 10000); }
+function stopAuto(){ if(autoInterval){ clearInterval(autoInterval); autoInterval = null; } }
+function resetAutoCountdown(){ stopAuto(); if(restartTimeout) clearTimeout(restartTimeout); restartTimeout = setTimeout(startAuto, 15000); }
+startAuto();
+
+function trazerParaCentro(idx){
+  if(isAnimating) return;
+  centro = idx;
+  aplicarPosicoes(true);
+}
+function avancarFrame(i){ projetos[i].frame = (projetos[i].frame+1) % projetos[i].frames.length; }
+function voltarFrame(i){ projetos[i].frame = (projetos[i].frame-1+projetos[i].frames.length) % projetos[i].frames.length; }
+
 
   function load(src) {
     if (!imageCache.has(src)) {
@@ -43,60 +191,6 @@
     const p = projetos[index];
     [1, -1].forEach(step => load(p.frames[(p.frame + step + p.frames.length) % p.frames.length]).catch(() => {}));
   }
-  function controls(index, change) {
-    const el = document.createElement('div'); el.className = 'image-controls';
-    const prev = document.createElement('button'); prev.type = 'button'; prev.textContent = '←';
-    prev.setAttribute('aria-label', 'Imagem anterior');
-    const count = document.createElement('output'); count.setAttribute('aria-live', 'polite');
-    const next = document.createElement('button'); next.type = 'button'; next.textContent = '→';
-    next.setAttribute('aria-label', 'Próxima imagem');
-    prev.onclick = () => change(-1); next.onclick = () => change(1);
-    el.append(prev, count, next);
-    return {el, update(i) { const p = projetos[i]; count.textContent = `${p.frame + 1} / ${p.frames.length}`; }};
-  }
-  function step(index, amount) {
-    const p = projetos[index]; p.frame = (p.frame + amount + p.frames.length) % p.frames.length;
-    if (mobile.matches) showMobile(index); else showDesktop();
-  }
-  const desktopControls = controls(0, amount => step(selected, amount));
-  footer.append(desktopControls.el);
-  projetos.forEach((p, index) => {
-    const button = document.createElement('button'); button.type = 'button'; button.textContent = p.titulo;
-    button.onclick = () => { selected = index; showDesktop(); };
-    nav.append(button);
-  });
-  async function showDesktop() {
-    const ticket = ++desktopRequest, index = selected, p = projetos[index];
-    title.textContent = p.titulo; description.textContent = p.descricao;
-    [...nav.children].forEach((button, i) => button.setAttribute('aria-current', String(i === index)));
-    desktopControls.update(index); status.textContent = 'carregando imagem…';
-    carousel.setAttribute('aria-busy', 'true');
-    try {
-      const source = await load(p.frames[p.frame]);
-      if (ticket !== desktopRequest) return;
-      const image = source.cloneNode(); image.className = 'gallery-image';
-      image.alt = `${p.titulo} — imagem ${p.frame + 1} de ${p.frames.length}`;
-      const previous = [...carousel.children]; carousel.append(image);
-      requestAnimationFrame(() => {
-        if (ticket !== desktopRequest) { image.remove(); return; }
-        image.classList.add('on'); previous.forEach(el => el.classList.remove('on'));
-        setTimeout(() => previous.forEach(el => el.remove()), 300);
-      });
-      status.textContent = ''; prefetch(index);
-    } catch {
-      if (ticket === desktopRequest) status.textContent = 'Não foi possível carregar esta imagem. Tente as setas para continuar.';
-    } finally {
-      if (ticket === desktopRequest) carousel.setAttribute('aria-busy', 'false');
-    }
-  }
-  carousel.addEventListener('click', event => {
-    const rect = carousel.getBoundingClientRect(); step(selected, event.clientX < rect.left + rect.width / 2 ? -1 : 1);
-  });
-  carousel.addEventListener('keydown', event => {
-    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-    event.preventDefault(); step(selected, event.key === 'ArrowLeft' ? -1 : 1);
-  });
-
   function buildMobile() {
     if (mobileViews.size) return;
     projetos.forEach((p, index) => {
@@ -214,14 +308,18 @@
     wrap.addEventListener('touchcancel', () => { gesture = tap = null; consumed = false; view.resetZoom(); }, {passive:true});
     window.addEventListener('resize', view.resetZoom, {passive:true});
   }
+  function step(index, amount) {
+    const p = projetos[index]; p.frame = (p.frame + amount + p.frames.length) % p.frames.length;
+    showMobile(index);
+  }
   function syncMode() {
     if (mobile.matches) {
-      ++desktopRequest; buildMobile();
+      stopAuto(); buildMobile();
       mobileViews.forEach((view, i) => {
         if (mobileObserver) mobileObserver.observe(view.article); else showMobile(i);
       });
     } else {
-      mobileObserver?.disconnect(); showDesktop();
+      mobileObserver?.disconnect(); aplicarPosicoes(false); startAuto();
     }
   }
   mobile.addEventListener('change', syncMode); syncMode();

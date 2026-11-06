@@ -11,6 +11,12 @@
   <style>
     :root{
       --bg:#fff; --fg:#111;
+      --gap:clamp(16px, 2.8vw, 36px);
+      --side-w:clamp(140px, 12vw, 220px);
+      --side-h:clamp(360px, 62vh, 720px);
+      --main-w:clamp(520px, calc(100vw - (2 * var(--side-w)) - (2 * var(--gap))), 1600px);
+      --main-h:clamp(420px, 70vh, 860px);
+      --text-gap:clamp(14px, 2.2vw, 28px);
       --ease:cubic-bezier(.22,.61,.36,1);
     }
 
@@ -125,8 +131,45 @@
     }
     .brandIcon img{ width:100%; height:100%; display:block; }
 
-    .galeria{position:relative;width:100%}
-    .stage{position:relative;width:100%}
+    /* ===== GALERIA (DESKTOP) ===== */
+    .galeria{ height:100vh; height:100dvh; width:100vw; position:relative; }
+    .stage{ position:relative; width:100%; height:100%; }
+
+    .titulo{
+      position:absolute; left:calc(50% - var(--main-w)/2); top:calc(50% - var(--main-h)/2);
+      transform:translateY(calc(-100% - var(--text-gap)));
+      margin:0; font-weight:600; font-size:clamp(20px, 2.4vw, 32px);
+    }
+    .descricao{
+      position:absolute; left:calc(50% - var(--main-w)/2); top:calc(50% + var(--main-h)/2 + var(--text-gap));
+      width:var(--main-w);
+      margin:0; font-weight:500; font-size:clamp(14px, 2vw, 22px); line-height:1.3; text-align:left;
+    }
+
+    .carousel{ position:absolute; inset:0; }
+    .projeto{
+      position:absolute; cursor:pointer; user-select:none;
+      will-change:transform, width, height, opacity;
+      margin:0;
+    }
+    .frame{ position: relative; width:100%; height:100%; overflow:hidden; }
+
+    /* 3-panel carousel: edge-to-edge */
+    .pos-centro{ width:var(--main-w); height:var(--main-h); opacity:1; z-index:3; transform:translate3d(calc(50vw - 50%), calc(50vh - 50%), 0) scale(1); }
+    .pos-esq  { width:var(--side-w); height:var(--side-h); opacity:1; z-index:2; transform:translate3d(0, calc(50vh - 50%), 0) scale(.965); transform-origin:left center; }
+    .pos-dir  { width:var(--side-w); height:var(--side-h); opacity:1; z-index:2; transform:translate3d(calc(100vw - var(--side-w)), calc(50vh - 50%), 0) scale(.965); transform-origin:right center; }
+    .pos-fila { width:var(--side-w); height:var(--side-h); opacity:0; z-index:1; transform:translate3d(120vw, calc(50vh - 50%), 0) scale(.94); }
+
+    .frame > .layer{
+      position:absolute; inset:0;
+      background-position:center; background-repeat:no-repeat; background-size:cover;
+      opacity:1; will-change:opacity; pointer-events:none;
+    }
+    .carousel .pos-esq   .frame > .layer{ background-position:right center; }
+    .carousel .pos-dir   .frame > .layer{ background-position:left  center; }
+    .carousel .pos-centro .frame > .layer{ background-size:contain; background-position:center; background-color:var(--bg); }
+
+    @media (prefers-reduced-motion: reduce){ .landing-name, .landing-surname, .landing-info, .projeto{ transition:none !important; } }
 
     /* ===== LISTA (MOBILE) ===== */
     .listaMobile{ display:none; }

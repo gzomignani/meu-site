@@ -12,6 +12,7 @@ class Element {
     this.classList={add:(...names)=>names.forEach(n=>classes.add(n)),remove:(...names)=>names.forEach(n=>classes.delete(n)),toggle:(n,on)=>on?classes.add(n):classes.delete(n),contains:n=>classes.has(n)};
   }
   append(...elements) { elements.forEach(el=>{el.parent=this;this.children.push(el);}); }
+  appendChild(el) {this.append(el);return el;}
   prepend(el) {el.parent=this;this.children.unshift(el);}
   after(el) { this.parent.append(el); }
   remove() {if(this.parent) this.parent.children=this.parent.children.filter(el=>el!==this);}
@@ -39,7 +40,7 @@ async function setup(mobile=true) {
   vm.runInNewContext(fs.readFileSync(__dirname+'/gallery.js','utf8'),{
     document:{querySelector:()=>stage,getElementById:id=>ids[id],createElement:tag=>new Element(tag)},
     matchMedia:()=>media,Image,window,projetos,performance,
-    requestAnimationFrame:fn=>raf.push(fn),setTimeout:()=>1,clearTimeout(){}
+    requestAnimationFrame:fn=>raf.push(fn),setTimeout:()=>1,clearTimeout(){},setInterval:()=>1,clearInterval(){}
   });
   async function settle(){for(let i=0;i<8;i++) await Promise.resolve(); const pending=raf;raf=[];pending.forEach(fn=>fn());}
   await settle();
@@ -87,14 +88,9 @@ test('zoom and pan are bounded; cancel and resize reset the image',async()=>{
   window.emit('resize');
   assert.equal(wrap.children.at(-1).style.transform,'translate3d(0px,0px,0) scale(1)');
 });
-test('rapid image navigation renders the final request and wraps around',async()=>{
-  const {ids,stage,projetos,settle}=await setup(false);
-  const footer=stage.children.find(el=>el.className==='gallery-footer');
-  const buttons=footer.children[1].children;
-  buttons[2].onclick();buttons[2].onclick();
-  await settle();
-  assert.equal(projetos[0].frame,2);
-  assert.equal(ids.carousel.children.at(-1).alt,'Projeto — imagem 3 de 3');
-  buttons[2].onclick();await settle();assert.equal(projetos[0].frame,0);
-  buttons[0].onclick();await settle();assert.equal(projetos[0].frame,2);
+test('desktop retains the original carousel without project menus or image controls',async()=>{
+  const {ids,stage}=await setup(false);
+  assert.equal(ids.carousel.children.length,1);
+  assert.equal(ids.carousel.children[0].classList.contains('pos-centro'),true);
+  assert.equal(stage.children.some(el=>el.className==='project-nav'||el.className==='gallery-footer'),false);
 });
