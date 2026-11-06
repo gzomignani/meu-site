@@ -27,16 +27,12 @@ button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 .image-controls output{min-width:48px;text-align:center}
 .gallery-status{font-size:13px;color:#666;min-height:1.3em}
 .mobile-hint{font-size:12px;color:#777;padding:0 5px;margin:8px 0}
-.zoom-reset[hidden]{display:none}
 @media (max-width:768px){
   .project-nav,.gallery-footer,.gallery-status{display:none}
-  .projMobile{margin:32px 0 48px}
-  .projMobile .image-controls{margin:12px 5px}
   .frameMobile .mediaWrap{touch-action:pan-y;transition:aspect-ratio 260ms var(--ease)}
   .frameMobile .mediaWrap.is-zoomed{touch-action:none}
   .frameMobile .mediaWrap>img.layer{transform-origin:0 0;transition:opacity 240ms ease;will-change:transform}
   .frameMobile .mediaWrap.is-resetting>img.layer{transition:opacity 240ms ease,transform 220ms var(--ease)}
-  .descricaoMobile{line-height:1.5}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}

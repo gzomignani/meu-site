@@ -105,20 +105,31 @@
       const heading = document.createElement('h3'); heading.className = 'tituloMobile'; heading.textContent = p.titulo;
       const frame = document.createElement('div'); frame.className = 'frameMobile';
       const wrap = document.createElement('div'); wrap.className = 'mediaWrap'; frame.append(wrap);
-      const control = controls(index, amount => step(index, amount));
-      const reset = document.createElement('button'); reset.type = 'button'; reset.className = 'zoom-reset';
-      reset.textContent = 'repor zoom'; reset.hidden = true; control.el.prepend(reset);
       const desc = document.createElement('p'); desc.className = 'descricaoMobile'; desc.textContent = p.descricao;
-      const message = document.createElement('p'); message.className = 'mobile-hint'; message.setAttribute('role','status');
-      article.append(heading, frame, control.el, desc, message); list.append(article);
-      const view = {article, wrap, reset, control, message, request:0, scale:1, x:0, y:0};
+      const message = document.createElement('p'); message.className = 'mobile-hint'; message.hidden = true; message.setAttribute('role','status');
+      article.append(heading, frame, desc, message); list.append(article);
+      const view = {article, wrap, message, request:0, scale:1, x:0, y:0};
       mobileViews.set(index, view); attachZoom(view, index);
+      // Keep the original article-wide tap navigation outside the zoom surface.
+      let textTap = null;
+      article.addEventListener('touchstart', event => {
+        textTap = null;
+        if (wrap.contains(event.target) || event.touches.length !== 1 || view.scale > 1.01) return;
+        const t = event.touches[0]; textTap = {x:t.clientX,y:t.clientY,time:performance.now()};
+      }, {passive:true});
+      article.addEventListener('touchend', event => {
+        if (!textTap || event.touches.length) return;
+        const t = event.changedTouches[0], start = textTap; textTap = null;
+        if (Math.hypot(t.clientX-start.x,t.clientY-start.y)<10 && performance.now()-start.time<300)
+          step(index,t.clientX<innerWidth/2?-1:1);
+      }, {passive:true});
+      article.addEventListener('touchcancel', () => {textTap=null;}, {passive:true});
     });
   }
   async function showMobile(index) {
     const view = mobileViews.get(index); if (!view) return;
     const p = projetos[index], ticket = ++view.request;
-    view.control.update(index); view.message.textContent = 'carregando imagem…';
+    view.message.hidden = true;
     try {
       const source = await load(p.frames[p.frame]);
       if (ticket !== view.request) return;
@@ -135,26 +146,28 @@
       });
       view.message.textContent = ''; prefetch(index);
     } catch {
-      if (ticket === view.request) view.message.textContent = 'Não foi possível carregar esta imagem. Use as setas para continuar.';
+      if (ticket === view.request) {
+        view.message.hidden = false;
+        view.message.textContent = 'Não foi possível carregar esta imagem. Toque na imagem para continuar.';
+      }
     }
   }
 
   function attachZoom(view, index) {
-    const {wrap, reset} = view;
+    const {wrap} = view;
     let gesture = null, tap = null, consumed = false, resetTimer;
     const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
     function paint() {
       view.x = clamp(view.x, wrap.clientWidth * (1 - view.scale), 0);
       view.y = clamp(view.y, wrap.clientHeight * (1 - view.scale), 0);
       wrap.querySelectorAll('img').forEach(img => img.style.transform = `translate3d(${view.x}px,${view.y}px,0) scale(${view.scale})`);
-      wrap.classList.toggle('is-zoomed', view.scale > 1.01); reset.hidden = view.scale <= 1.01;
+      wrap.classList.toggle('is-zoomed', view.scale > 1.01);
     }
     view.resetZoom = () => {
       view.scale = 1; view.x = view.y = 0; gesture = null;
       wrap.classList.add('is-resetting'); paint();
       clearTimeout(resetTimer); resetTimer = setTimeout(() => wrap.classList.remove('is-resetting'), 240);
     };
-    reset.onclick = view.resetZoom;
     const distance = touches => Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
     function midpoint(touches) {
       const rect = wrap.getBoundingClientRect();
@@ -205,7 +218,6 @@
     if (mobile.matches) {
       ++desktopRequest; buildMobile();
       mobileViews.forEach((view, i) => {
-        view.control.update(i);
         if (mobileObserver) mobileObserver.observe(view.article); else showMobile(i);
       });
     } else {

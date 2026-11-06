@@ -44,24 +44,23 @@ async function setup(mobile=true) {
   async function settle(){for(let i=0;i<8;i++) await Promise.resolve(); const pending=raf;raf=[];pending.forEach(fn=>fn());}
   await settle();
   const article=ids.listaMobile.children[0];
-  return {ids,stage,media,window,projetos,settle,article,wrap:article?.children[1].children[0],reset:article?.children[2].children[0]};
+  return {ids,stage,media,window,projetos,settle,article,wrap:article?.children[1].children[0]};
 }
 const touch=(clientX,clientY)=>({clientX,clientY});
 
 test('pinch scales just the image, stays anchored and does not advance on release',async()=>{
-  const {wrap,reset,projetos,article}=await setup();
+  const {wrap,projetos,article}=await setup();
   assert.equal(wrap.emit('touchstart',[touch(100,100),touch(300,100)]).prevented,true);
   assert.equal(wrap.emit('touchmove',[touch(0,100),touch(400,100)]).prevented,true);
   const image=wrap.children.at(-1);
   assert.equal(image.style.transform,'translate3d(-200px,-100px,0) scale(2)');
   assert.equal(article.style.transform,undefined);
-  assert.equal(reset.hidden,false);
   wrap.emit('touchend',[touch(200,100)],[touch(400,100)]);
   wrap.emit('touchend',[],[touch(200,100)]);
   assert.equal(projetos[0].frame,0);
-  reset.onclick();
+  wrap.emit('touchcancel');
   assert.equal(image.style.transform,'translate3d(0px,0px,0) scale(1)');
-  assert.equal(reset.hidden,true);
+  assert.equal(article.children.some(el=>el.className==='image-controls'),false);
 });
 test('single-finger scrolling remains native, while a tap advances',async()=>{
   const {wrap,projetos,settle}=await setup();
