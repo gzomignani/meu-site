@@ -24,7 +24,10 @@
   let frame=0,lastShuffle=-Infinity;
   let origin={x:0,y:0,size:90};
   let dockOffset={x:0,y:0};
-  let lastNameProgress=0;
+  let measuredWidth=0;
+  let measuredHeight=0;
+  const nativeScroll=CSS.supports('animation-timeline:scroll(root block)')&&CSS.supports('animation-range:0px 100px');
+  function usesNativeScroll(){return compact.matches&&nativeScroll&&!reduced.matches;}
   let lineDelay=0;
   const groups=ids.map((id,i)=>{
     const el=document.getElementById(id),text=el.textContent;
@@ -69,29 +72,46 @@
     });
     info.style.width=surname.offsetWidth+'px';
     const rect=placeholder.getBoundingClientRect(),parent=sticky.getBoundingClientRect();
-    origin={x:rect.left,y:rect.top-parent.top+56*lastNameProgress,size:rect.width};
+    const nameTransform=getComputedStyle(name).transform;
+    const nameY=nameTransform==='none'?0:new DOMMatrixReadOnly(nameTransform).m42;
+    origin={x:rect.left,y:rect.top-parent.top-nameY,size:rect.width};
     const dockStyle=getComputedStyle(dock);
     dockOffset={x:parseFloat(dockStyle.left)||0,y:parseFloat(dockStyle.top)||0};
+    measuredWidth=window.innerWidth;
+    measuredHeight=sticky.clientHeight;
+    const distance=sticky.clientHeight*.85;
+    const native=usesNativeScroll();
+    document.documentElement.classList.toggle('native-opening-motion',native);
+    dock.style.setProperty('--logo-from-x',`${origin.x-dockOffset.x}px`);
+    dock.style.setProperty('--logo-from-y',`${origin.y-dockOffset.y}px`);
+    dock.style.setProperty('--logo-from-scale',origin.size/90);
+    dock.style.setProperty('--opening-distance',`${distance}px`);
+    [name,surname,info].forEach((el,i)=>{
+      el.style.setProperty('--exit-y',`${-[56,42,28][i]}px`);
+      el.style.setProperty('--exit-start',`${distance*i*.035}px`);
+      el.style.setProperty('--exit-end',`${distance*(.9+i*.035)}px`);
+      if(native){el.style.removeProperty('transform');el.style.removeProperty('opacity');el.style.removeProperty('filter');}
+    });
+    if(native) dock.style.removeProperty('transform');
   }
   function wake(){if(!frame) frame=requestAnimationFrame(tick);}
   function tick(now){
     frame=0;
     const vh=compact.matches?sticky.clientHeight:(window.innerHeight||1);
     const progress=clamp(window.scrollY/(vh*.85));
-    [name,surname,info].forEach((el,i)=>{
+    if(!usesNativeScroll()) [name,surname,info].forEach((el,i)=>{
       const p=smooth(clamp((progress-i*.035)/.9));
-      if(i===0) lastNameProgress=p;
       el.style.transform=reduced.matches?'none':`translate3d(0,${-[56,42,28][i]*p}px,0)`;
       el.style.opacity=reduced.matches?'1':String(1-p);
       // Keep expensive blur restrained and off the moving logo itself.
-      el.style.filter=reduced.matches||p<.02?'none':`blur(${[2,1.5,.8][i]*p}px)`;
+      el.style.filter=compact.matches||reduced.matches||p<.02?'none':`blur(${[2,1.5,.8][i]*p}px)`;
     });
     const p=reduced.matches?(progress>.5?1:0):smooth(progress);
     const size=compact.matches?50:90;
     const x=compact.matches?16+dockOffset.x:(window.innerWidth-size)/2;
     const y=compact.matches?16+dockOffset.y:24;
     const pose=logoPose(origin,{x,y,size},reduced.matches?p:progress);
-    dock.style.transform=`translate3d(${pose.x-dockOffset.x}px,${pose.y-dockOffset.y}px,0) scale(${pose.scale})`;
+    if(!usesNativeScroll()) dock.style.transform=`translate3d(${pose.x-dockOffset.x}px,${pose.y-dockOffset.y}px,0) scale(${pose.scale})`;
     let decrypting=false;
     if(now-lastShuffle>=28){
       lastShuffle=now;
@@ -110,11 +130,20 @@
     if(decrypting) wake();
   }
   function resize(){measure();wake();}
-  window.addEventListener('scroll',wake,{passive:true});
-  window.addEventListener('resize',resize,{passive:true});
+  window.addEventListener('scroll',()=>{if(!usesNativeScroll()) wake();},{passive:true});
+  // Safari changes innerHeight while its toolbar retracts. The mobile layout
+  // uses svh/lvh, so those events must not remeasure text or restart the path.
+  window.addEventListener('resize',()=>{
+    if(!compact.matches||window.innerWidth!==measuredWidth) resize();
+  },{passive:true});
+  // A real layout/orientation change still updates the origin. Unlike the
+  // visual viewport, this svh-sized box stays stable as Safari's bars move.
+  new ResizeObserver(()=>{
+    if(compact.matches&&sticky.clientHeight!==measuredHeight) resize();
+  }).observe(sticky);
   reduced.addEventListener('change',()=>{
     if(reduced.matches) groups.forEach(group=>{group.done=true;group.el.textContent=group.text;});
-    wake();
+    resize();
   });
   document.fonts.ready.then(resize);
   measure();wake();
