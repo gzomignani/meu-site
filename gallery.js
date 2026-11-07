@@ -59,7 +59,7 @@
   function attachZoom(view,index){
     const {wrap,article}=view;
     let gesture=null,tap=null,consumed=false,resetAnimation=null,resetToken=0;
-    const viewport=()=>({left:window.visualViewport?.offsetLeft||0,top:window.visualViewport?.offsetTop||0,width:window.visualViewport?.width||window.innerWidth,height:window.visualViewport?.height||window.innerHeight});
+    const viewport=()=>view.zoomViewport||({left:window.visualViewport?.offsetLeft||0,top:window.visualViewport?.offsetTop||0,width:window.visualViewport?.width||window.innerWidth,height:window.visualViewport?.height||window.innerHeight});
     const distance=touches=>Math.hypot(touches[0].clientX-touches[1].clientX,touches[0].clientY-touches[1].clientY);
     function captureBase(){
       if(view.zoomActive) return;
@@ -79,6 +79,8 @@
       wrap.style.setProperty('--zoom-width',base.width+'px');wrap.style.setProperty('--zoom-height',base.height+'px');
       wrap.classList.add('is-zoomed');article.classList.add('has-zoom');
       document.documentElement.classList.add('image-zoom-active');
+      const plane=wrap.children[0].getBoundingClientRect();
+      view.zoomViewport={left:plane.left,top:plane.top,width:Math.max(plane.width,window.innerWidth),height:Math.max(plane.height,window.innerHeight)};
     }
     function paint(){
       if(view.scale>1.01) activate();
@@ -102,7 +104,7 @@
       const from='translate3d('+view.x+'px,'+view.y+'px,0) scale('+view.scale+')';
       function finish(){
         if(ticket!==resetToken) return;
-        view.scale=1;view.x=view.y=0;view.zoomActive=false;view.zoomBase=null;
+        view.scale=1;view.x=view.y=0;view.zoomActive=false;view.zoomBase=null;view.zoomViewport=null;
         wrap.classList.remove('is-zoomed');article.classList.remove('has-zoom');
         wrap.querySelectorAll('img').forEach(img=>img.style.transform='translate3d(0px,0px,0) scale(1)');
         if(activeZoom===view){activeZoom=null;document.documentElement.classList.remove('image-zoom-active');}
@@ -115,9 +117,11 @@
       }else finish();
     };
     wrap.addEventListener('touchstart',event=>{
+      if(resetAnimation&&event.touches.length<2){tap=null;consumed=true;return;}
       cancelReturn();
       if(event.touches.length>=2){
-        event.preventDefault();consumed=true;tap=null;captureBase();
+        if(!wrap.querySelectorAll('img').length) return;
+        event.preventDefault();consumed=true;tap=null;captureBase();activate();
         const mid=midpoint(event.touches),vp=viewport(),base=view.zoomBase;
         const maxScale=Math.max(4,Math.ceil(vp.width/base.width),Math.ceil(vp.height/base.height));
         gesture={distance:distance(event.touches),scale:view.scale,anchorX:(mid.x-view.x)/view.scale,anchorY:(mid.y-view.y)/view.scale,maxScale};
@@ -139,6 +143,13 @@
       }
     },{passive:false});
     wrap.addEventListener('touchend',event=>{
+      // Pinch is transient: ending either contact returns the photo and releases scroll.
+      if(consumed||view.zoomActive||resetAnimation){
+        gesture=tap=null;
+        if(!resetAnimation) view.resetZoom(true);
+        if(!event.touches.length) consumed=false;
+        return;
+      }
       if(event.touches.length){
         const t=event.touches[0];gesture={panX:t.clientX-view.x,panY:t.clientY-view.y};return;
       }
@@ -149,7 +160,7 @@
         }
       }
       gesture=tap=null;consumed=false;
-      if(view.scale<1.02) view.resetZoom(true);
+      if(view.scale<1.02) view.resetZoom();
     },{passive:true});
     wrap.addEventListener('touchcancel',()=>{gesture=tap=null;consumed=false;view.resetZoom();},{passive:true});
     // Browser bars change viewport height while scrolling; do not cancel the gesture.

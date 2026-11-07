@@ -23,6 +23,7 @@
   const start=performance.now();
   let frame=0,lastShuffle=-Infinity;
   let origin={x:0,y:0,size:90};
+  let dockOffset={x:0,y:0};
   let lastNameProgress=0;
   let lineDelay=0;
   const groups=ids.map((id,i)=>{
@@ -69,6 +70,8 @@
     info.style.width=surname.offsetWidth+'px';
     const rect=placeholder.getBoundingClientRect(),parent=sticky.getBoundingClientRect();
     origin={x:rect.left,y:rect.top-parent.top+56*lastNameProgress,size:rect.width};
+    const dockStyle=getComputedStyle(dock);
+    dockOffset={x:parseFloat(dockStyle.left)||0,y:parseFloat(dockStyle.top)||0};
   }
   function wake(){if(!frame) frame=requestAnimationFrame(tick);}
   function tick(now){
@@ -85,10 +88,10 @@
     });
     const p=reduced.matches?(progress>.5?1:0):smooth(progress);
     const size=compact.matches?50:90;
-    const x=compact.matches?16:(window.innerWidth-size)/2;
-    const y=compact.matches?16:24;
+    const x=compact.matches?16+dockOffset.x:(window.innerWidth-size)/2;
+    const y=compact.matches?16+dockOffset.y:24;
     const pose=logoPose(origin,{x,y,size},reduced.matches?p:progress);
-    dock.style.transform=`translate3d(${pose.x}px,${pose.y}px,0) scale(${pose.scale})`;
+    dock.style.transform=`translate3d(${pose.x-dockOffset.x}px,${pose.y-dockOffset.y}px,0) scale(${pose.scale})`;
     let decrypting=false;
     if(now-lastShuffle>=28){
       lastShuffle=now;

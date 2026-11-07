@@ -65,9 +65,9 @@ test('pinch scales just the image, stays anchored and does not advance on releas
   assert.equal(image.style.transform,'translate3d(-200px,-100px,0) scale(2)');
   assert.equal(article.style.transform,undefined);
   wrap.emit('touchend',[touch(200,100)],[touch(400,100)]);
+  assert.equal(image.style.transform,'translate3d(0px,0px,0) scale(1)');
   wrap.emit('touchend',[],[touch(200,100)]);
   assert.equal(projetos[0].frame,0);
-  wrap.emit('touchcancel');
   assert.equal(image.style.transform,'translate3d(0px,0px,0) scale(1)');
   assert.equal(article.children.some(el=>el.className==='image-controls'),false);
 });
@@ -86,8 +86,7 @@ test('zoom and pan are bounded; cancel and resize reset the image',async()=>{
   wrap.emit('touchstart',[touch(150,100),touch(250,100)]);
   wrap.emit('touchmove',[touch(-1000,100),touch(1000,100)]);
   assert.match(wrap.querySelectorAll('img').at(-1).style.transform,/scale\(4\)/);
-  wrap.emit('touchend',[touch(100,100)]);
-  wrap.emit('touchmove',[touch(9999,9999)]);
+  wrap.emit('touchmove',[touch(9000,9999),touch(11000,9999)]);
   assert.equal(wrap.querySelectorAll('img').at(-1).style.transform,'translate3d(0px,0px,0) scale(4)');
   wrap.emit('touchcancel');
   assert.match(wrap.querySelectorAll('img').at(-1).style.transform,/scale\(1\)/);
@@ -117,4 +116,15 @@ test('height changes from browser bars keep the pinch gesture active',async()=>{
   window.innerHeight=850;window.emit('resize');
   assert.equal(wrap.classList.contains('is-zoomed'),true);
   assert.match(wrap.querySelectorAll('img').at(-1).style.transform,/scale\(2\)/);
+});
+test('releasing the pinch restores the image and makes the next scroll gesture native',async()=>{
+  const {wrap,document,projetos}=await setup();
+  wrap.emit('touchstart',[touch(100,100),touch(300,100)]);
+  wrap.emit('touchmove',[touch(0,100),touch(400,100)]);
+  wrap.emit('touchend',[],[touch(0,100),touch(400,100)]);
+  assert.equal(wrap.classList.contains('is-zoomed'),false);
+  assert.equal(document.documentElement.classList.contains('image-zoom-active'),false);
+  assert.equal(projetos[0].frame,0);
+  assert.equal(wrap.emit('touchstart',[touch(200,100)]).prevented,false);
+  assert.equal(wrap.emit('touchmove',[touch(200,20)]).prevented,false);
 });
