@@ -1,0 +1,26 @@
+/* Same composition, one coherent motion system. */
+.brandIcon{transform-origin:0 0;will-change:transform}
+.galeria{width:100%}
+.decrypt-slot{display:inline-block;white-space:pre;text-align:center;vertical-align:baseline}
+.project-slide,.media-slide{position:absolute;inset:0;overflow:hidden;background:var(--bg);pointer-events:none;will-change:transform}
+.project-image{position:absolute;left:0;top:0;max-width:none;transform-origin:0 0;display:block;pointer-events:auto;will-change:transform}
+@media (min-width:769px){
+  .hero{height:125vh;height:125dvh;align-items:start}
+  .galeria{--media-top:160px}
+  .carousel .projeto{left:0;top:0;transform-origin:0 0;transition:none!important;will-change:transform,width,height;contain:layout style;pointer-events:none}
+  .carousel .frame{width:100%;height:100%;overflow:hidden;contain:paint}
+  .pos-fila{pointer-events:none}
+  .titulo{top:var(--title-top,112px);transform:none}
+  .descricao{top:calc(var(--media-top) + var(--main-h) + var(--text-gap))}
+}
+.mobile-hint{font-size:12px;color:#777;padding:0 5px;margin:8px 0}
+@media (max-width:768px){
+  .frameMobile .mediaWrap{touch-action:pan-y}
+  .frameMobile .mediaWrap.is-zoomed{touch-action:none}
+  .mediaWrap .media-slide>img.layer{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;opacity:1;pointer-events:none;transform-origin:0 0}
+  .mediaWrap.is-resetting .media-slide>img.layer{transition:transform 220ms cubic-bezier(.22,.72,.22,1)}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+@media (pointer:coarse){body{cursor:auto}}
