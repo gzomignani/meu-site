@@ -9,14 +9,11 @@
   const info=document.getElementById('landingInfo');
   const icon=document.getElementById('landingIcon');
   const dock=document.getElementById('brandIcon');
-  // Animate one actual logo, leaving an empty placeholder in the wordmark.
-  const placeholder=document.createElement('span');placeholder.className='landing-icon';
-  placeholder.setAttribute('aria-hidden','true');
-  const iconRatio=icon.naturalWidth&&icon.naturalHeight?icon.naturalWidth/icon.naturalHeight:1;
-  placeholder.style.width=`${.8*iconRatio}em`;
-  icon.replaceWith(placeholder);icon.classList.remove('landing-icon');
-  Object.assign(icon.style,{width:'100%',height:'100%',margin:'0',display:'block'});
-  dock.replaceChildren(icon);dock.style.opacity='1';
+  // Keep the original in-flow mobile icon and its fixed counterpart. Desktop
+  // keeps its existing transform path; mobile restores the original handoff.
+  const placeholder=icon;
+  icon.style.opacity=compact.matches?'1':'0';
+  dock.style.opacity=compact.matches?'0':'1';
   const context=document.createElement('canvas').getContext('2d');
   const characters='abcdefghkmnprstuvxyz234578@#$%';
   const ids=['decryptGabriel','decryptZomignani','decryptLine1','decryptLine2','decryptEmail'];
@@ -26,8 +23,9 @@
   let dockOffset={x:0,y:0};
   let measuredWidth=0;
   let measuredHeight=0;
-  const nativeScroll=CSS.supports('animation-timeline:scroll(root block)')&&CSS.supports('animation-range:0px 100px');
-  function usesNativeScroll(){return compact.matches&&nativeScroll&&!reduced.matches;}
+  let previousMobile=compact.matches;
+  let prevScrollY=0,driftSign=-1,cachedSrc=null;
+  const easeOriginal=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
   let lineDelay=0;
   const groups=ids.map((id,i)=>{
     const el=document.getElementById(id),text=el.textContent;
@@ -79,39 +77,64 @@
     dockOffset={x:parseFloat(dockStyle.left)||0,y:parseFloat(dockStyle.top)||0};
     measuredWidth=window.innerWidth;
     measuredHeight=sticky.clientHeight;
-    const distance=sticky.clientHeight*.85;
-    const native=usesNativeScroll();
-    document.documentElement.classList.toggle('native-opening-motion',native);
-    dock.style.setProperty('--logo-from-x',`${origin.x-dockOffset.x}px`);
-    dock.style.setProperty('--logo-from-y',`${origin.y-dockOffset.y}px`);
-    dock.style.setProperty('--logo-from-scale',origin.size/90);
-    dock.style.setProperty('--opening-distance',`${distance}px`);
+    if(compact.matches&&(window.scrollY<5||!cachedSrc)) cachedSrc={x:origin.x,y:origin.y,w:origin.size};
+  }
+  // Restored from the original index.html (06c6da7): same 0.7-screen icon
+  // range, quadratic easing, linear size interpolation and text parallax.
+  function renderOriginalMobile(){
+    const vh=window.innerHeight||1,scrollY=window.scrollY;
+    if(scrollY>prevScrollY+.5) driftSign=-1;
+    else if(scrollY<prevScrollY-.5) driftSign+=(1-driftSign)*.15;
+    prevScrollY=scrollY;
+    const tRaw=clamp(scrollY/(vh*3.2)),scrollFollow=scrollY*.25;
     [name,surname,info].forEach((el,i)=>{
-      el.style.setProperty('--exit-y',`${-[56,42,28][i]}px`);
-      el.style.setProperty('--exit-start',`${distance*i*.035}px`);
-      el.style.setProperty('--exit-end',`${distance*(.9+i*.035)}px`);
-      if(native){el.style.removeProperty('transform');el.style.removeProperty('opacity');el.style.removeProperty('filter');}
+      const e=easeOriginal(clamp((tRaw-[.10,.13,.16][i])/.15));
+      if(!reduced.matches){
+        el.style.transform=`translate3d(0,${vh*[.35,.30,.22][i]*driftSign*e+scrollFollow}px,0)`;
+        const blur=[12,14,8][i]*e;
+        el.style.filter=blur>.5?`blur(${blur}px)`:'none';
+        el.style.opacity=String(clamp(1-e*[1.3,1.3,1.4][i]));
+        if(i<2) el.style.letterSpacing=`${[.08,.06][i]*e}em`;
+      }else{
+        el.style.opacity=tRaw>.5?'0':'1';
+        el.style.transform='none';el.style.filter='none';el.style.letterSpacing='0em';
+      }
     });
-    if(native) dock.style.removeProperty('transform');
+    const iconRaw=clamp(scrollY/(vh*.7));
+    if(iconRaw<.02){
+      const rect=icon.getBoundingClientRect();
+      cachedSrc={x:rect.left,y:rect.top,w:rect.width};
+    }
+    const src=cachedSrc||{x:origin.x,y:origin.y,w:origin.size};
+    icon.style.opacity=iconRaw>.01?'0':'1';
+    dock.style.opacity=iconRaw>.01?'1':'0';
+    const mp=easeOriginal(iconRaw),size=src.w+(50-src.w)*mp;
+    dock.style.transform='none';
+    dock.style.left=`${src.x+(16-src.x)*mp}px`;
+    dock.style.top=`${src.y+(16-src.y)*mp}px`;
+    dock.style.width=`${size}px`;dock.style.height=`${size}px`;
   }
   function wake(){if(!frame) frame=requestAnimationFrame(tick);}
   function tick(now){
     frame=0;
     const vh=compact.matches?sticky.clientHeight:(window.innerHeight||1);
     const progress=clamp(window.scrollY/(vh*.85));
-    if(!usesNativeScroll()) [name,surname,info].forEach((el,i)=>{
+    if(compact.matches) renderOriginalMobile();
+    else {
+    [name,surname,info].forEach((el,i)=>{
       const p=smooth(clamp((progress-i*.035)/.9));
       el.style.transform=reduced.matches?'none':`translate3d(0,${-[56,42,28][i]*p}px,0)`;
       el.style.opacity=reduced.matches?'1':String(1-p);
       // Keep expensive blur restrained and off the moving logo itself.
-      el.style.filter=compact.matches||reduced.matches||p<.02?'none':`blur(${[2,1.5,.8][i]*p}px)`;
+      el.style.filter=reduced.matches||p<.02?'none':`blur(${[2,1.5,.8][i]*p}px)`;
     });
     const p=reduced.matches?(progress>.5?1:0):smooth(progress);
     const size=compact.matches?50:90;
     const x=compact.matches?16+dockOffset.x:(window.innerWidth-size)/2;
     const y=compact.matches?16+dockOffset.y:24;
     const pose=logoPose(origin,{x,y,size},reduced.matches?p:progress);
-    if(!usesNativeScroll()) dock.style.transform=`translate3d(${pose.x-dockOffset.x}px,${pose.y-dockOffset.y}px,0) scale(${pose.scale})`;
+    dock.style.transform=`translate3d(${pose.x-dockOffset.x}px,${pose.y-dockOffset.y}px,0) scale(${pose.scale})`;
+    }
     let decrypting=false;
     if(now-lastShuffle>=28){
       lastShuffle=now;
@@ -129,8 +152,17 @@
     decrypting=groups.some(group=>!group.done);
     if(decrypting) wake();
   }
-  function resize(){measure();wake();}
-  window.addEventListener('scroll',()=>{if(!usesNativeScroll()) wake();},{passive:true});
+  function resize(){
+    if(compact.matches!==previousMobile){
+      previousMobile=compact.matches;
+      ['left','top','width','height','transform'].forEach(key=>dock.style.removeProperty(key));
+      [name,surname,info].forEach(el=>el.style.removeProperty('letter-spacing'));
+      icon.style.opacity=compact.matches?'1':'0';dock.style.opacity=compact.matches?'0':'1';
+      cachedSrc=null;prevScrollY=0;driftSign=-1;
+    }
+    measure();wake();
+  }
+  window.addEventListener('scroll',wake,{passive:true});
   // Safari changes innerHeight while its toolbar retracts. The mobile layout
   // uses svh/lvh, so those events must not remeasure text or restart the path.
   window.addEventListener('resize',()=>{
