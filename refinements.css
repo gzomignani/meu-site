@@ -2,15 +2,13 @@
 .brandIcon{transform-origin:0 0;will-change:transform}
 @media (min-width:769px){.hero{height:125vh;height:125dvh}}
 @media (min-width:769px){
-  .galeria{width:100%;--media-top:160px;--fold-w:calc((100vw - var(--main-w)) * .9)}
-  .carousel{perspective:880px;perspective-origin:50% calc(var(--media-top) + var(--main-h)/2);transform-style:preserve-3d}
-  .projeto{width:var(--main-w);height:var(--main-h);transform-origin:center;backface-visibility:hidden;will-change:transform,opacity;
-    transform:translate3d(calc(50vw - 50%),calc(var(--media-top) + var(--main-h)/2 - 50%),0) rotateY(var(--face-angle,0deg))}
-  .pos-centro{opacity:1;z-index:3}
-  .pos-esq,.pos-dir{width:var(--fold-w);opacity:1;z-index:2}
-  .pos-esq{transform-origin:right center;transform:translate3d(calc((100vw - var(--main-w))/2 - 100%),calc(var(--media-top) + var(--main-h)/2 - 50%),0) rotateY(-25deg)}
-  .pos-dir{transform-origin:left center;transform:translate3d(calc((100vw + var(--main-w))/2),calc(var(--media-top) + var(--main-h)/2 - 50%),0) rotateY(25deg)}
-  .pos-fila{width:var(--fold-w);opacity:0;z-index:1;pointer-events:none;transform:translate3d(120vw,calc(var(--media-top) + var(--main-h)/2 - 50%),-300px) rotateY(var(--face-angle,0deg))}
+  .galeria{width:100%;--media-top:160px}
+  .projeto{will-change:transform,width,height,opacity}
+  .pos-centro{width:var(--main-w);height:var(--main-h);opacity:1;z-index:3;transform-origin:center;transform:translate3d(calc(50vw - 50%),calc(var(--media-top) + var(--main-h)/2 - 50%),0) scale(1)}
+  .pos-esq,.pos-dir{width:var(--side-w);height:calc(var(--main-h) * .88);opacity:1;z-index:2}
+  .pos-esq{transform-origin:left center;transform:translate3d(0,calc(var(--media-top) + var(--main-h)/2 - 50%),0) scale(.965)}
+  .pos-dir{transform-origin:right center;transform:translate3d(calc(100vw - var(--side-w)),calc(var(--media-top) + var(--main-h)/2 - 50%),0) scale(.965)}
+  .pos-fila{width:var(--side-w);height:calc(var(--main-h) * .88);opacity:0;z-index:1;pointer-events:none;transform:translate3d(120vw,calc(var(--media-top) + var(--main-h)/2 - 50%),0) scale(.965)}
   .carousel .frame>.layer{background-size:contain;background-position:center;background-color:transparent}
   .carousel .pos-esq .frame>.layer,.carousel .pos-dir .frame>.layer{background-size:cover}
   .titulo{top:var(--title-top,112px);transform:none}

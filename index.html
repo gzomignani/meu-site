@@ -395,8 +395,11 @@ function onScroll(){
       [document.querySelector('.landing-name'), document.querySelector('.landing-surname'), document.getElementById('landingInfo')].forEach((el, i) => {
         const progress = easeSmooth(clamp01((textProgress - i * 0.045) / 0.86));
         el.style.opacity = reducedMotion ? '1' : String(1 - progress);
-        el.style.transform = reducedMotion ? 'none' : 'translate3d(0,' + (-36 * progress) + 'px,0)';
-        el.style.filter = 'none'; el.style.letterSpacing = '';
+        const travel = [56, 42, 28][i];
+        const blur = [3, 2, 1][i] * progress;
+        el.style.transform = reducedMotion ? 'none' : 'translate3d(0,' + (-travel * progress) + 'px,0)';
+        el.style.filter = reducedMotion || blur < .1 ? 'none' : 'blur(' + blur + 'px)';
+        el.style.letterSpacing = reducedMotion || i === 2 ? '' : (progress * .008) + 'em';
       });
 
       // --- Icon morph (unchanged) ---

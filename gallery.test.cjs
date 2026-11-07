@@ -94,14 +94,14 @@ test('desktop retains the original carousel without project menus or image contr
   assert.equal(ids.carousel.children[0].classList.contains('pos-centro'),true);
   assert.equal(stage.children.some(el=>el.className==='project-nav'||el.className==='gallery-footer'),false);
 });
-test('hexagon wraps to the previous project without spinning rear faces through the front',async()=>{
+test('carousel wraps hidden projects offscreen and accepts another selection during motion',async()=>{
   const {ids}=await setup(false,5);
   const faces=ids.carousel.children;
-  assert.deepEqual(faces.map(el=>el.style['--face-angle']),['0deg','25deg','50deg','-50deg','-25deg']);
   faces[4].listeners.click[0]({clientX:100});
-  assert.deepEqual(faces.map(el=>el.style['--face-angle']),['25deg','50deg','-50deg','-25deg','0deg']);
   assert.equal(faces[2].style.transition,'none');
   assert.equal(faces[4].classList.contains('pos-centro'),true);
   assert.equal(faces[2].attributes['aria-hidden'],'true');
   assert.equal(faces[2].tabIndex,-1);
+  faces[0].listeners.click[0]({clientX:100});
+  assert.equal(faces[0].classList.contains('pos-centro'),true);
 });

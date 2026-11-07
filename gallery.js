@@ -17,6 +17,7 @@ const elTitulo = document.getElementById('titulo');
 const elDescricao = document.getElementById('descricao');
 let centro = 0, autoInterval = null, restartTimeout = null;
 let isAnimating = false;
+let animationUnlock = null;
 
 /* Precompute natural aspect ratios for smooth size transitions */
 const naturalRatios = {};
@@ -45,7 +46,6 @@ function criarProjetoDesktop(i){
   el.appendChild(frame);
 
   el.addEventListener('click', (e) => {
-    if(isAnimating) return;
     if(+el.dataset.index === centro){
       // Click left/right half of center panel to go prev/next frame
       const cr = el.getBoundingClientRect();
@@ -84,10 +84,11 @@ function aplicarValorEmFrameDesktop(frameEl, value){
 
   const maybeFade = () => {
     requestAnimationFrame(() => {
-      next.style.transition = 'opacity 400ms cubic-bezier(.4,0,.2,1)';
+      if(frameEl.dataset.current !== value){ next.remove(); return; }
+      next.style.transition = 'opacity 280ms cubic-bezier(.4,0,.2,1)';
       next.style.opacity = '1';
       if(prev){
-        prev.style.transition = 'opacity 400ms cubic-bezier(.4,0,.2,1)';
+        prev.style.transition = 'opacity 280ms cubic-bezier(.4,0,.2,1)';
         prev.style.opacity = '0';
         prev.addEventListener('transitionend', () => prev.remove(), {once:true});
       }
@@ -109,7 +110,6 @@ projetos.forEach((_, i) => elCarousel.appendChild(criarProjetoDesktop(i)));
 
 /* Smooth carousel transitions via JS for better control */
 const TRANSITION_DURATION = 650;
-const FACE_ANGLE = 25; // shallower side faces, extending towards the viewport edges
 const TRANSITION_EASING = 'cubic-bezier(.22, .8, .25, 1)';
 
 function setTransitions(el, enable){
@@ -118,6 +118,7 @@ function setTransitions(el, enable){
       `transform ${TRANSITION_DURATION}ms ${TRANSITION_EASING}`,
       `transform-origin ${TRANSITION_DURATION}ms ${TRANSITION_EASING}`,
       `width ${TRANSITION_DURATION}ms ${TRANSITION_EASING}`,
+      `height ${TRANSITION_DURATION}ms ${TRANSITION_EASING}`,
       `opacity ${TRANSITION_DURATION}ms ${TRANSITION_EASING}`
     ].join(', ');
   } else {
@@ -138,9 +139,8 @@ function aplicarPosicoes(animate){
     const previousOffset = Number(el.dataset.offset ?? offset);
     el.classList.remove('pos-esq','pos-centro','pos-dir','pos-fila');
 
-    // Recycle rear faces behind the viewer instead of spinning through the front.
+    // Reposition hidden projects offscreen, without sweeping across the visible set.
     setTransitions(el, animate && !(Math.abs(previousOffset) > 1 && Math.abs(offset) > 1));
-    el.style.setProperty('--face-angle', `${offset * FACE_ANGLE}deg`);
     el.dataset.offset = offset;
     el.tabIndex = Math.abs(offset) <= 1 ? 0 : -1;
     el.setAttribute('aria-hidden', String(Math.abs(offset) > 1));
@@ -159,7 +159,8 @@ function aplicarPosicoes(animate){
   elDescricao.textContent = projetos[centro].descricao;
 
   if(animate){
-    setTimeout(() => { isAnimating = false; }, TRANSITION_DURATION);
+    clearTimeout(animationUnlock);
+    animationUnlock = setTimeout(() => { isAnimating = false; }, TRANSITION_DURATION);
   }
 }
 
@@ -203,7 +204,6 @@ function resetAutoCountdown(){ stopAuto(); if(restartTimeout) clearTimeout(resta
 startAuto();
 
 function trazerParaCentro(idx){
-  if(isAnimating) return;
   centro = idx;
   aplicarPosicoes(true);
 }
