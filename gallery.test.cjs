@@ -6,7 +6,7 @@ const fs = require('node:fs');
 // Small DOM boundary for testing the real touch handlers without a browser driver.
 class Element {
   constructor(tag='div') {
-    this.tag = tag; this.children=[]; this.style={}; this.listeners={}; this.attributes={};
+    this.tag = tag; this.children=[]; this.style={setProperty(name,value){this[name]=value;}}; this.listeners={}; this.attributes={};
     this.clientWidth=400; this.clientHeight=200; this.dataset={};
     const classes = new Set();
     this.classList={add:(...names)=>names.forEach(n=>classes.add(n)),remove:(...names)=>names.forEach(n=>classes.delete(n)),toggle:(n,on)=>on?classes.add(n):classes.delete(n),contains:n=>classes.has(n)};
@@ -25,12 +25,12 @@ class Element {
     (this.listeners[name]||[]).forEach(fn=>fn(event));return event;
   }
 }
-async function setup(mobile=true) {
+async function setup(mobile=true, projectCount=1) {
   const ids=Object.fromEntries(['carousel','titulo','descricao','listaMobile'].map(id=>[id,new Element()]));
   const stage=new Element();stage.append(...Object.values(ids));
   const media={matches:mobile,addEventListener(name,fn){this.change=fn;}};
   const window=new Element();
-  const projetos=[{titulo:'Projeto',descricao:'Descrição',frames:['one.jpg','two.jpg','three.jpg'],frame:0}];
+  const projetos=Array.from({length:projectCount},()=>({titulo:'Projeto',descricao:'Descrição',frames:['one.jpg','two.jpg','three.jpg'],frame:0}));
   let raf=[];
   class Image extends Element {
     constructor(){super('img');this.naturalWidth=800;this.naturalHeight=400;}
@@ -93,4 +93,15 @@ test('desktop retains the original carousel without project menus or image contr
   assert.equal(ids.carousel.children.length,1);
   assert.equal(ids.carousel.children[0].classList.contains('pos-centro'),true);
   assert.equal(stage.children.some(el=>el.className==='project-nav'||el.className==='gallery-footer'),false);
+});
+test('hexagon wraps to the previous project without spinning rear faces through the front',async()=>{
+  const {ids}=await setup(false,5);
+  const faces=ids.carousel.children;
+  assert.deepEqual(faces.map(el=>el.style['--face-angle']),['0deg','25deg','50deg','-50deg','-25deg']);
+  faces[4].listeners.click[0]({clientX:100});
+  assert.deepEqual(faces.map(el=>el.style['--face-angle']),['25deg','50deg','-50deg','-25deg','0deg']);
+  assert.equal(faces[2].style.transition,'none');
+  assert.equal(faces[4].classList.contains('pos-centro'),true);
+  assert.equal(faces[2].attributes['aria-hidden'],'true');
+  assert.equal(faces[2].tabIndex,-1);
 });

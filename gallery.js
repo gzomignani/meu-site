@@ -108,16 +108,17 @@ function aplicarValorEmFrameDesktop(frameEl, value){
 projetos.forEach((_, i) => elCarousel.appendChild(criarProjetoDesktop(i)));
 
 /* Smooth carousel transitions via JS for better control */
-const TRANSITION_DURATION = 850; // ms
-const TRANSITION_EASING = 'cubic-bezier(.4, 0, .12, 1)';
+const TRANSITION_DURATION = 650;
+const FACE_ANGLE = 25; // shallower side faces, extending towards the viewport edges
+const TRANSITION_EASING = 'cubic-bezier(.22, .8, .25, 1)';
 
 function setTransitions(el, enable){
   if(enable){
     el.style.transition = [
       `transform ${TRANSITION_DURATION}ms ${TRANSITION_EASING}`,
+      `transform-origin ${TRANSITION_DURATION}ms ${TRANSITION_EASING}`,
       `width ${TRANSITION_DURATION}ms ${TRANSITION_EASING}`,
-      `height ${TRANSITION_DURATION}ms ${TRANSITION_EASING}`,
-      `opacity 500ms cubic-bezier(.4,0,.2,1)`
+      `opacity ${TRANSITION_DURATION}ms ${TRANSITION_EASING}`
     ].join(', ');
   } else {
     el.style.transition = 'none';
@@ -132,9 +133,17 @@ function aplicarPosicoes(animate){
 
   children.forEach(el => {
     const i = +el.dataset.index;
+    let offset = (i - centro + n) % n;
+    if(offset > n / 2) offset -= n;
+    const previousOffset = Number(el.dataset.offset ?? offset);
     el.classList.remove('pos-esq','pos-centro','pos-dir','pos-fila');
 
-    setTransitions(el, animate);
+    // Recycle rear faces behind the viewer instead of spinning through the front.
+    setTransitions(el, animate && !(Math.abs(previousOffset) > 1 && Math.abs(offset) > 1));
+    el.style.setProperty('--face-angle', `${offset * FACE_ANGLE}deg`);
+    el.dataset.offset = offset;
+    el.tabIndex = Math.abs(offset) <= 1 ? 0 : -1;
+    el.setAttribute('aria-hidden', String(Math.abs(offset) > 1));
 
     if(i === centro) el.classList.add('pos-centro');
     else if(i === esq) el.classList.add('pos-esq');
@@ -155,6 +164,33 @@ function aplicarPosicoes(animate){
 }
 
 aplicarPosicoes(false);
+
+// Reserve the longest caption before sizing the image, so the set fits one screen.
+function ajustarConjuntoDesktop(){
+  if(mobile.matches || !window.innerHeight) return;
+  const gallery = document.querySelector('.galeria');
+  const measure = elDescricao.cloneNode(false);
+  measure.removeAttribute('id');
+  Object.assign(measure.style,{position:'absolute',visibility:'hidden',top:'0',transform:'none',pointerEvents:'none'});
+  gallery.appendChild(measure);
+  let captionHeight = 0;
+  projetos.forEach(project => {
+    measure.textContent = project.descricao;
+    captionHeight = Math.max(captionHeight, measure.getBoundingClientRect().height);
+  });
+  measure.remove();
+  const gap = parseFloat(getComputedStyle(gallery).getPropertyValue('--text-gap')) || 20;
+  const top = Math.min(112, window.innerHeight * .14);
+  const titleHeight = elTitulo.getBoundingClientRect().height;
+  const mediaTop = top + titleHeight + gap;
+  const available = window.innerHeight - mediaTop - gap - captionHeight - 28;
+  gallery.style.setProperty('--title-top', `${top}px`);
+  gallery.style.setProperty('--media-top', `${mediaTop}px`);
+  gallery.style.setProperty('--main-h', `${Math.max(80, Math.min(window.innerHeight * .7, 860, available))}px`);
+}
+window.addEventListener('resize', ajustarConjuntoDesktop, {passive:true});
+document.fonts?.ready.then(ajustarConjuntoDesktop);
+ajustarConjuntoDesktop();
 
 function passo(){
   if(isAnimating) return;
