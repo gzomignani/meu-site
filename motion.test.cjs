@@ -2,7 +2,7 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const vm=require('node:vm');
 const fs=require('node:fs');
-const {logoPose,offset,slotRect,fitImage}=require('./motion.js');
+const {logoPose,offset,slotRect,fitImage,zoomPan}=require('./motion.js');
 
 test('logo starts at the source and ends exactly at the dock without a visibility handoff',()=>{
   const source={x:900,y:260,size:160},target={x:675,y:24,size:90};
@@ -35,6 +35,15 @@ test('central images keep their aspect ratio and fit the available frame',()=>{
     assert.ok(Math.abs(width/height-ratio)<1e-10);
     assert.ok(pose.x>=0&&pose.y>=0);
   }
+});
+test('a zoomed landscape image can cover the whole viewport, beyond its original frame',()=>{
+  const base={left:0,top:300,width:400,height:200};
+  const viewport={left:0,top:0,width:400,height:800};
+  const pan=zoomPan(base,viewport,4,-600,-300);
+  assert.ok(base.left+pan.x<=viewport.left);
+  assert.ok(base.left+pan.x+base.width*4>=viewport.width);
+  assert.equal(base.top+pan.y,0);
+  assert.equal(base.top+pan.y+base.height*4,800);
 });
 function mediaHarness(){
   const window={};let decodeCount=0,fail=false;

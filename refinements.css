@@ -1,12 +1,14 @@
 /* Same composition, one coherent motion system. */
 .brandIcon{transform-origin:0 0;will-change:transform}
 .galeria{width:100%}
+html.image-zoom-active{overflow:hidden;overscroll-behavior:none}
 .decrypt-slot{display:inline-block;white-space:pre;text-align:center;vertical-align:baseline}
 .project-slide,.media-slide{position:absolute;inset:0;overflow:hidden;background:var(--bg);pointer-events:none;will-change:transform}
 .project-image{position:absolute;left:0;top:0;max-width:none;transform-origin:0 0;display:block;pointer-events:auto;will-change:transform}
 @media (min-width:769px){
   .hero{height:125vh;height:125dvh;align-items:start}
   .galeria{--media-top:160px}
+  .carousel{overflow:clip}
   .carousel .projeto{left:0;top:0;transform-origin:0 0;transition:none!important;will-change:transform,width,height;contain:layout style;pointer-events:none}
   .carousel .frame{width:100%;height:100%;overflow:hidden;contain:paint}
   .pos-fila{pointer-events:none}
@@ -14,11 +16,18 @@
   .descricao{top:calc(var(--media-top) + var(--main-h) + var(--text-gap))}
 }
 .mobile-hint{font-size:12px;color:#777;padding:0 5px;margin:8px 0}
-@media (max-width:768px){
+@media (max-width:768px), (hover:none) and (pointer:coarse){
+  .hero{display:block;height:auto;min-height:100vh;min-height:100lvh}
+  .hero__sticky{position:relative;top:auto;width:100%;height:auto;min-height:100vh;min-height:100svh;padding-top:max(12px,env(safe-area-inset-top));padding-bottom:max(12px,env(safe-area-inset-bottom))}
+  .logoWrap{padding-left:max(2vw,env(safe-area-inset-left));padding-right:max(2vw,env(safe-area-inset-right))}
+  .landing-name,.landing-surname{font-size:clamp(40px,min(19vw,30svh),180px)}
+  .landing-info{font-size:clamp(12px,min(4.5vw,6svh),30px)}
   .frameMobile .mediaWrap{touch-action:pan-y}
   .frameMobile .mediaWrap.is-zoomed{touch-action:none}
+  .projMobile.has-zoom{position:relative;z-index:100}
+  .mediaWrap.is-zoomed .media-slide{position:fixed;inset:0;width:100%;height:100%;z-index:100;overflow:hidden;background:transparent;pointer-events:auto;touch-action:none;overscroll-behavior:none}
   .mediaWrap .media-slide>img.layer{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;opacity:1;pointer-events:none;transform-origin:0 0}
-  .mediaWrap.is-resetting .media-slide>img.layer{transition:transform 220ms cubic-bezier(.22,.72,.22,1)}
+  .mediaWrap.is-zoomed .media-slide>img.layer{inset:auto;left:var(--zoom-left);top:var(--zoom-top);width:var(--zoom-width);height:var(--zoom-height)}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}

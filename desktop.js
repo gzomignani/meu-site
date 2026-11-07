@@ -8,7 +8,7 @@
   const title=document.getElementById('titulo');
   const description=document.getElementById('descricao');
   const views=[];
-  let center=0,mobile=innerWidth<=768,layout=null,resizeFrame=0;
+  let center=0,mobile=matchMedia('(max-width:768px), (hover:none) and (pointer:coarse)').matches,layout=null,resizeFrame=0;
   let auto=0,hovered=false,focused=false,inView=false,userInteracted=false;
   const duration=560,easing='cubic-bezier(.22,.72,.22,1)';
   function animate(el,from,to,animations,time=duration){

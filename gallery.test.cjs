@@ -31,6 +31,8 @@ async function setup(mobile=true, projectCount=1) {
   const stage=new Element();stage.append(...Object.values(ids));
   const media={matches:mobile,addEventListener(name,fn){this.change=fn;}};
   const window=new Element();
+  window.innerWidth=400;window.innerHeight=800;
+  window.PortfolioMotion=require('./motion.js');
   window.PortfolioMedia={load:async()=>new Image(),replaceFrame:async(container,next)=>container.replaceChildren(next)};
   window.PortfolioDesktop={setMobile(){}};
   const projetos=Array.from({length:projectCount},()=>({titulo:'Projeto',descricao:'Descrição',frames:['one.jpg','two.jpg','three.jpg'],frame:0}));
@@ -40,8 +42,10 @@ async function setup(mobile=true, projectCount=1) {
     decode(){return Promise.resolve();}
     cloneNode(){return new Image();}
   }
+  const document=new Element();document.documentElement=new Element();
+  document.querySelector=()=>stage;document.getElementById=id=>ids[id];document.createElement=tag=>new Element(tag);
   vm.runInNewContext(fs.readFileSync(__dirname+'/gallery.js','utf8'),{
-    document:{querySelector:()=>stage,getElementById:id=>ids[id],createElement:tag=>new Element(tag)},
+    document,
     matchMedia:()=>media,Image,window,projetos,performance,
     PortfolioMedia:null,
     requestAnimationFrame:fn=>raf.push(fn),setTimeout:()=>1,clearTimeout(){},setInterval:()=>1,clearInterval(){}
@@ -49,7 +53,7 @@ async function setup(mobile=true, projectCount=1) {
   async function settle(){for(let i=0;i<8;i++) await Promise.resolve(); const pending=raf;raf=[];pending.forEach(fn=>fn());}
   await settle();
   const article=ids.listaMobile.children[0];
-  return {ids,stage,media,window,projetos,settle,article,wrap:article?.children[1].children[0]};
+  return {ids,stage,media,window,document,projetos,settle,article,wrap:article?.children[1].children[0]};
 }
 const touch=(clientX,clientY)=>({clientX,clientY});
 
@@ -89,6 +93,28 @@ test('zoom and pan are bounded; cancel and resize reset the image',async()=>{
   assert.match(wrap.querySelectorAll('img').at(-1).style.transform,/scale\(1\)/);
   wrap.emit('touchstart',[touch(100,100),touch(300,100)]);
   wrap.emit('touchmove',[touch(0,100),touch(400,100)]);
+  window.innerWidth=500;
   window.emit('resize');
   assert.equal(wrap.querySelectorAll('img').at(-1).style.transform,'translate3d(0px,0px,0) scale(1)');
+});
+test('zoom expands beyond the source frame and releases the viewport on cancel',async()=>{
+  const {wrap,article,document}=await setup();
+  wrap.emit('touchstart',[touch(100,100),touch(300,100)]);
+  wrap.emit('touchmove',[touch(0,100),touch(400,100)]);
+  assert.equal(wrap.classList.contains('is-zoomed'),true);
+  assert.equal(article.classList.contains('has-zoom'),true);
+  assert.equal(document.documentElement.classList.contains('image-zoom-active'),true);
+  assert.equal(wrap.style['--zoom-width'],'400px');
+  assert.equal(wrap.style['--zoom-height'],'200px');
+  wrap.emit('touchcancel');
+  assert.equal(wrap.classList.contains('is-zoomed'),false);
+  assert.equal(document.documentElement.classList.contains('image-zoom-active'),false);
+});
+test('height changes from browser bars keep the pinch gesture active',async()=>{
+  const {wrap,window}=await setup();
+  wrap.emit('touchstart',[touch(100,100),touch(300,100)]);
+  wrap.emit('touchmove',[touch(0,100),touch(400,100)]);
+  window.innerHeight=850;window.emit('resize');
+  assert.equal(wrap.classList.contains('is-zoomed'),true);
+  assert.match(wrap.querySelectorAll('img').at(-1).style.transform,/scale\(2\)/);
 });

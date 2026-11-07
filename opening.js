@@ -2,6 +2,7 @@
 (() => {
   const {clamp,smooth,logoPose}=window.PortfolioMotion;
   const reduced=matchMedia('(prefers-reduced-motion:reduce)');
+  const compact=matchMedia('(max-width:768px), (hover:none) and (pointer:coarse)');
   const sticky=document.querySelector('.hero__sticky');
   const name=document.querySelector('.landing-name');
   const surname=document.getElementById('decryptZomignani');
@@ -72,7 +73,7 @@
   function wake(){if(!frame) frame=requestAnimationFrame(tick);}
   function tick(now){
     frame=0;
-    const vh=window.innerHeight||1;
+    const vh=compact.matches?sticky.clientHeight:(window.innerHeight||1);
     const progress=clamp(window.scrollY/(vh*.85));
     [name,surname,info].forEach((el,i)=>{
       const p=smooth(clamp((progress-i*.035)/.9));
@@ -83,9 +84,9 @@
       el.style.filter=reduced.matches||p<.02?'none':`blur(${[2,1.5,.8][i]*p}px)`;
     });
     const p=reduced.matches?(progress>.5?1:0):smooth(progress);
-    const size=window.innerWidth<=768?50:90;
-    const x=window.innerWidth<=768?16:(window.innerWidth-size)/2;
-    const y=window.innerWidth<=768?16:24;
+    const size=compact.matches?50:90;
+    const x=compact.matches?16:(window.innerWidth-size)/2;
+    const y=compact.matches?16:24;
     const pose=logoPose(origin,{x,y,size},reduced.matches?p:progress);
     dock.style.transform=`translate3d(${pose.x}px,${pose.y}px,0) scale(${pose.scale})`;
     let decrypting=false;

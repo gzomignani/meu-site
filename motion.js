@@ -25,7 +25,15 @@
     const anchor=slot<0?1:slot>0?0:.5;
     return {x:(rect.w-width*scale)*anchor,y:(rect.h-height*scale)/2,scale};
   }
-  const api={clamp,mix,smooth,logoPose,offset,slotRect,fitImage};
+  function zoomPan(base,viewport,scale,x,y){
+    function axis(value,start,size,viewportStart,viewportSize){
+      const end=viewportStart+viewportSize-start-size*scale;
+      const beginning=viewportStart-start;
+      return clamp(value,Math.min(size*(1-scale),beginning,end),Math.max(0,beginning,end));
+    }
+    return {x:axis(x,base.left,base.width,viewport.left,viewport.width),y:axis(y,base.top,base.height,viewport.top,viewport.height)};
+  }
+  const api={clamp,mix,smooth,logoPose,offset,slotRect,fitImage,zoomPan};
   if(typeof module!=='undefined') module.exports=api;
   else window.PortfolioMotion=api;
 })();
