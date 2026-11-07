@@ -1,25 +1,24 @@
-/* Keep the existing presentation; extend only the desktop scroll interval. */
+/* Same composition, one coherent motion system. */
 .brandIcon{transform-origin:0 0;will-change:transform}
-@media (min-width:769px){.hero{height:125vh;height:125dvh}}
+.galeria{width:100%}
+.decrypt-slot{display:inline-block;white-space:pre;text-align:center;vertical-align:baseline}
+.project-slide,.media-slide{position:absolute;inset:0;overflow:hidden;background:var(--bg);pointer-events:none;will-change:transform}
+.project-image{position:absolute;left:0;top:0;max-width:none;transform-origin:0 0;display:block;pointer-events:auto;will-change:transform}
 @media (min-width:769px){
-  .galeria{width:100%;--media-top:160px}
-  .projeto{will-change:transform,width,height,opacity}
-  .pos-centro{width:var(--main-w);height:var(--main-h);opacity:1;z-index:3;transform-origin:center;transform:translate3d(calc(50vw - 50%),calc(var(--media-top) + var(--main-h)/2 - 50%),0) scale(1)}
-  .pos-esq,.pos-dir{width:var(--side-w);height:calc(var(--main-h) * .88);opacity:1;z-index:2}
-  .pos-esq{transform-origin:left center;transform:translate3d(0,calc(var(--media-top) + var(--main-h)/2 - 50%),0) scale(.965)}
-  .pos-dir{transform-origin:right center;transform:translate3d(calc(100vw - var(--side-w)),calc(var(--media-top) + var(--main-h)/2 - 50%),0) scale(.965)}
-  .pos-fila{width:var(--side-w);height:calc(var(--main-h) * .88);opacity:0;z-index:1;pointer-events:none;transform:translate3d(120vw,calc(var(--media-top) + var(--main-h)/2 - 50%),0) scale(.965)}
-  .carousel .frame>.layer{background-size:contain;background-position:center;background-color:transparent}
-  .carousel .pos-esq .frame>.layer,.carousel .pos-dir .frame>.layer{background-size:cover}
+  .hero{height:125vh;height:125dvh;align-items:start}
+  .galeria{--media-top:160px}
+  .carousel .projeto{left:0;top:0;transform-origin:0 0;transition:none!important;will-change:transform,width,height;contain:layout style;pointer-events:none}
+  .carousel .frame{width:100%;height:100%;overflow:hidden;contain:paint}
+  .pos-fila{pointer-events:none}
   .titulo{top:var(--title-top,112px);transform:none}
   .descricao{top:calc(var(--media-top) + var(--main-h) + var(--text-gap))}
 }
 .mobile-hint{font-size:12px;color:#777;padding:0 5px;margin:8px 0}
 @media (max-width:768px){
-  .frameMobile .mediaWrap{touch-action:pan-y;transition:aspect-ratio 260ms var(--ease)}
+  .frameMobile .mediaWrap{touch-action:pan-y}
   .frameMobile .mediaWrap.is-zoomed{touch-action:none}
-  .frameMobile .mediaWrap>img.layer{transform-origin:0 0;transition:opacity 240ms ease;will-change:transform}
-  .frameMobile .mediaWrap.is-resetting>img.layer{transition:opacity 240ms ease,transform 220ms var(--ease)}
+  .mediaWrap .media-slide>img.layer{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;opacity:1;pointer-events:none;transform-origin:0 0}
+  .mediaWrap.is-resetting .media-slide>img.layer{transition:transform 220ms cubic-bezier(.22,.72,.22,1)}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}

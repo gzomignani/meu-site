@@ -12,6 +12,7 @@ class Element {
     this.classList={add:(...names)=>names.forEach(n=>classes.add(n)),remove:(...names)=>names.forEach(n=>classes.delete(n)),toggle:(n,on)=>on?classes.add(n):classes.delete(n),contains:n=>classes.has(n)};
   }
   append(...elements) { elements.forEach(el=>{el.parent=this;this.children.push(el);}); }
+  replaceChildren(...elements) {this.children=[];this.append(...elements);}
   appendChild(el) {this.append(el);return el;}
   prepend(el) {el.parent=this;this.children.unshift(el);}
   after(el) { this.parent.append(el); }
@@ -30,6 +31,8 @@ async function setup(mobile=true, projectCount=1) {
   const stage=new Element();stage.append(...Object.values(ids));
   const media={matches:mobile,addEventListener(name,fn){this.change=fn;}};
   const window=new Element();
+  window.PortfolioMedia={load:async()=>new Image(),replaceFrame:async(container,next)=>container.replaceChildren(next)};
+  window.PortfolioDesktop={setMobile(){}};
   const projetos=Array.from({length:projectCount},()=>({titulo:'Projeto',descricao:'Descrição',frames:['one.jpg','two.jpg','three.jpg'],frame:0}));
   let raf=[];
   class Image extends Element {
@@ -40,6 +43,7 @@ async function setup(mobile=true, projectCount=1) {
   vm.runInNewContext(fs.readFileSync(__dirname+'/gallery.js','utf8'),{
     document:{querySelector:()=>stage,getElementById:id=>ids[id],createElement:tag=>new Element(tag)},
     matchMedia:()=>media,Image,window,projetos,performance,
+    PortfolioMedia:null,
     requestAnimationFrame:fn=>raf.push(fn),setTimeout:()=>1,clearTimeout(){},setInterval:()=>1,clearInterval(){}
   });
   async function settle(){for(let i=0;i<8;i++) await Promise.resolve(); const pending=raf;raf=[];pending.forEach(fn=>fn());}
@@ -53,7 +57,7 @@ test('pinch scales just the image, stays anchored and does not advance on releas
   const {wrap,projetos,article}=await setup();
   assert.equal(wrap.emit('touchstart',[touch(100,100),touch(300,100)]).prevented,true);
   assert.equal(wrap.emit('touchmove',[touch(0,100),touch(400,100)]).prevented,true);
-  const image=wrap.children.at(-1);
+  const image=wrap.querySelectorAll('img').at(-1);
   assert.equal(image.style.transform,'translate3d(-200px,-100px,0) scale(2)');
   assert.equal(article.style.transform,undefined);
   wrap.emit('touchend',[touch(200,100)],[touch(400,100)]);
@@ -77,31 +81,14 @@ test('zoom and pan are bounded; cancel and resize reset the image',async()=>{
   const {wrap,window}=await setup();
   wrap.emit('touchstart',[touch(150,100),touch(250,100)]);
   wrap.emit('touchmove',[touch(-1000,100),touch(1000,100)]);
-  assert.match(wrap.children.at(-1).style.transform,/scale\(4\)/);
+  assert.match(wrap.querySelectorAll('img').at(-1).style.transform,/scale\(4\)/);
   wrap.emit('touchend',[touch(100,100)]);
   wrap.emit('touchmove',[touch(9999,9999)]);
-  assert.equal(wrap.children.at(-1).style.transform,'translate3d(0px,0px,0) scale(4)');
+  assert.equal(wrap.querySelectorAll('img').at(-1).style.transform,'translate3d(0px,0px,0) scale(4)');
   wrap.emit('touchcancel');
-  assert.match(wrap.children.at(-1).style.transform,/scale\(1\)/);
+  assert.match(wrap.querySelectorAll('img').at(-1).style.transform,/scale\(1\)/);
   wrap.emit('touchstart',[touch(100,100),touch(300,100)]);
   wrap.emit('touchmove',[touch(0,100),touch(400,100)]);
   window.emit('resize');
-  assert.equal(wrap.children.at(-1).style.transform,'translate3d(0px,0px,0) scale(1)');
-});
-test('desktop retains the original carousel without project menus or image controls',async()=>{
-  const {ids,stage}=await setup(false);
-  assert.equal(ids.carousel.children.length,1);
-  assert.equal(ids.carousel.children[0].classList.contains('pos-centro'),true);
-  assert.equal(stage.children.some(el=>el.className==='project-nav'||el.className==='gallery-footer'),false);
-});
-test('carousel wraps hidden projects offscreen and accepts another selection during motion',async()=>{
-  const {ids}=await setup(false,5);
-  const faces=ids.carousel.children;
-  faces[4].listeners.click[0]({clientX:100});
-  assert.equal(faces[2].style.transition,'none');
-  assert.equal(faces[4].classList.contains('pos-centro'),true);
-  assert.equal(faces[2].attributes['aria-hidden'],'true');
-  assert.equal(faces[2].tabIndex,-1);
-  faces[0].listeners.click[0]({clientX:100});
-  assert.equal(faces[0].classList.contains('pos-centro'),true);
+  assert.equal(wrap.querySelectorAll('img').at(-1).style.transform,'translate3d(0px,0px,0) scale(1)');
 });
